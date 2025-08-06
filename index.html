@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Anomaverse 3.0 - The Intent-Driven Economy</title>
+    <title>Anomaverse: Final Stand</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono&display=swap" rel="stylesheet">
@@ -27,12 +27,12 @@
             50% { box-shadow: 0 0 16px var(--primary-color), inset 0 0 12px var(--primary-color); }
         }
         @keyframes item-fly-in {
-            from { transform: translateZ(200px) scale(0.5); opacity: 0; }
-            to { transform: translateZ(0) scale(1); opacity: 1; }
+            from { transform: translateZ(200px) scale(0.5) rotate(45deg); opacity: 0; }
+            to { transform: translateZ(0) scale(1) rotate(0deg); opacity: 1; }
         }
         @keyframes item-fly-out {
-            from { transform: translateZ(0) scale(1); opacity: 1; }
-            to { transform: translateZ(-200px) scale(0.5); opacity: 0; }
+            from { transform: translateZ(0) scale(1) rotate(0deg); opacity: 1; }
+            to { transform: translateZ(-200px) scale(0.5) rotate(-45deg); opacity: 0; }
         }
 
         body {
@@ -133,6 +133,7 @@
         #solver-log-container p { margin: 0 0 5px 0; }
         .log-success { color: var(--secondary-color); }
         .log-fail { color: #aaa; }
+        .log-info { color: #ffd700; }
 
         /* --- Right Panel: Actions --- */
         .scrollable-content { overflow-y: auto; padding-right: 10px; flex-grow: 1; }
@@ -143,7 +144,7 @@
         }
         .resource-item.selected { border-color: var(--primary-color); transform: scale(1.05); animation: pulse 1.5s infinite; }
         .resource-item:hover { border-color: var(--secondary-color); }
-        .resource-item svg { width: 50px; height: 50px; margin: 0 auto; }
+        .resource-item svg { width: 50px; height: 50px; margin: 0 auto; image-rendering: pixelated; }
         .resource-item p { margin: 5px 0 0; font-size: 12px; }
         
         #intents-list { max-height: 250px; overflow-y: auto; }
@@ -192,9 +193,7 @@
     </style>
 </head>
 <body>
-
     <div class="game-wrapper">
-        <!-- Left Panel -->
         <div class="panel" id="player-panel">
             <div>
                 <h2>Player Profile</h2>
@@ -209,19 +208,13 @@
                 <button id="connect-btn">Connect Wallet</button>
             </div>
         </div>
-
-        <!-- Center Panel -->
         <div class="panel" id="game-world-panel">
             <h3>INVENTORY GRID</h3>
             <div id="game-board">
                 <div id="isometric-grid"></div>
             </div>
-            <div id="solver-log-container">
-                <p class="log-fail">Solver Idle...</p>
-            </div>
+            <div id="solver-log-container"><p class="log-fail">Solver Idle...</p></div>
         </div>
-
-        <!-- Right Panel -->
         <div class="panel" id="intents-panel">
             <div class="scrollable-content">
                 <h3>Your Offered Items</h3>
@@ -234,28 +227,23 @@
             </div>
         </div>
     </div>
-    
-    <!-- Utility Controls -->
     <div id="utility-controls">
         <button id="how-to-play-btn" class="secondary-button">?</button>
         <button id="mute-btn" class="secondary-button">Mute</button>
     </div>
-
-    <!-- Modals -->
     <div id="how-to-play-modal" class="modal">
         <div class="modal-content">
             <h2>Welcome to Anomaverse!</h2>
             <p>Your goal is to acquire all items in your "Desired Items" list by bartering with other traders.</p>
-            <ul>
+            <ul style="margin: 20px 0;">
                 <li><b>Connect:</b> Start by connecting your wallet to get a unique identity and choose an avatar.</li>
-                <li><b>Create Intents:</b> Select one item you HAVE and one you WANT, then click "Create Intent" to broadcast your wish to the network.</li>
-                <li><b>Run the Solver:</b> Click "Run Solver"! This powerful engine looks at ALL active intents and automatically executes fair trades.</li>
-                <li><b>Win:</b> The game is won when your inventory contains all of your desired items. Good luck, trader!</li>
+                <li><b>Create Intents:</b> Select one item you HAVE and one you WANT, then click "Create Intent".</li>
+                <li><b>Run the Solver:</b> Click "Run Solver"! This powerful engine finds and executes fair trades.</li>
+                <li><b>Win:</b> The game is won when your inventory contains all of your desired items.</li>
             </ul>
             <button id="close-how-to-play-btn">Let's Trade!</button>
         </div>
     </div>
-
     <div id="avatar-modal" class="modal">
         <div class="modal-content">
             <h2>Choose Your Avatar</h2>
@@ -267,7 +255,6 @@
             <button id="confirm-avatar-btn" disabled>Confirm Identity</button>
         </div>
     </div>
-
     <div id="win-modal" class="modal">
         <div class="modal-content">
             <h2>All Intents Satisfied!</h2>
@@ -279,25 +266,14 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- ASSETS (PIXEL ART) ---
         const B64_ASSETS = {
             avatars: {
                 mage: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0iIzQwMjg1OCIgZD0iTTYgMzFoNHYxSDZ6TTI0IDMxaDR2MUgyNHptLTE1LTFoMnYxSDl6bTE0LTFoMnYxSDIzem0tMTUtMWgydjFIN3ptMTYtMWgydjFIMjN6Ii8+PHBhdGggZmlsbD0iIzZBNEM5RiIgZD0iTTEyIDI4aDJ2MUgxMnptOC0waDJ2MUgyMHptLTUtMWgydjJIMTV6bS0zLTFoMnYxSDEyem04LTFoMnYxSDIwem0tMTEtMWgydjJIMTl6bTYtMWg0djJIMTV6bS03LTFoMnYxSDh6bTE2LTFoMnYxSDI0ek05IDIzaDJ2MUg5em0xNC0waDJ2MUgyM3pNNyAyMmgydjFIN3ptMTgtMWgydjFIMjV6TTcgMjBoMnYxSDd6bTE4LTFoMnYxSDI1em0tMTgtMWgydjFIN3ptMTggMGgydjFIMjV6TTcgMThoMnYxSDd6bTE4LTFoMnYxSDI1ek02IDE2aDJ2MUg2em0yMC0xaDJ2MUgyNnptLTIwLTFoMnYxSDZ6bTIwIDBoMnYxSDI2eiIvPjxwYXRoIGZpbGw9IiNDRTgzODMiIGQ9Ik0xOCAyOGgydjJIMTh6bS02LTNoMnYySDEyem0tMS0xaDJ2MUgxMXptMTAgMGgydjFIMjF6bS05LTFoMnYySDI3djJIMTR2LTJIMTJaIi8+PHBhdGggZmlsbD0iI0ZGRkY5QyIgZD0iTTE4IDhnaDJ2MkgxOHptLTYgMGgydjJIMTJ6Ii8+PHBhdGggZmlsbD0iI0E3NTY3MyIgZD0iTTggMTVoMnYySDh6bTE2IDBoMnYySDI0ek0xMCAxNGgydjJIMTB6bTEyIDBoMnYySDIyek04IDEzaDJ2MUg4em0xNiAwaDJ2MUgyNHpNOCAxMmgydjFIN3YyaDJ2LTJIMTB2LTFoMnYySDd2LTFoMlYxMUg4eiIvPjxwYXRoIGZpbGw9IiM2QTUxODUiIGQ9Ik0xMiAxM2gydjJIMTJ6bTggMGgydjJIMjB6Ii8+PHBhdGggZmlsbD0iIzQ4M0E2QiIgZD0iTTE0IDEyaDR2MkgxNHptLTEgOGgydjJIMTN6bTYgMGgydjJIMTl6Ii8+PHBhdGggZmlsbD0iIzM1MjgzOCIgZD0iTTEzIDIyaDJ2MUgxM3ptNiAwaDJ2MUgxOXptLTQgMmgydjJIMTV6bS0zIDNoMnYySDEyem04IDBoMnYySDIweiIvPjwvc3ZnPg==",
-                trader: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0iIzMzMjEwRSIgZD0iTTYgMzFoNHYxSDZ6TTI0IDMxaDR2MUgyNHpNOSAzMGgydjFIOW0xNC0waDJ2MUgyM3ptLTItMWgydjJIMjF6bS0xMi0xaDJ2Mkg5ek04IDIzaDJ2MUg4em0xNiAwaDJ2MUgyNHptLTEgMWgydjFIMjN6bS0xNi0xaDJ2MUg3em0xNy0yaDJ2Mkg3djJoMnYtMmgxNnYyaDJ2LTJIMjRaIi8+PHBhdGggZmlsbD0iIzJGMzgzMyIgZD0iTTggMjJoMnYxSDh6bTE2IDBoMnYxSDI0ek04IDIxaDJ2MUg4em0xNiAwaDJ2MUgyNHptLTE2IDBoMnYxSDh6bTE2IDBoMnYxSDI0eiIvPjxwYXRoIGZpbGw9IiM3RDI5MEIiIGQ9Ik0xMCAyNGgydjJIMTB6bTEyIDBoMnYySDIyek0xMiAyNmgydjJIMTJ6bTggMGgydjJIMjB6Ii8+PHBhdGggZmlsbD0iI0E0M0MxMyIgZD0iTTEzIDIySDl2Mmg0em0xMCAwaDJ2MkgxNVYyMmg0djJoNHYtMnoiLz48cGF0aCBmaWxsPSIjRTM2MzNEIiBkPSJNMTMgMTZoNnYySDEzWiIvPjxwYXRoIGZpbGw9IiNGRkE4MkUiIGQ9Ik0xMSA5aDEwdjJIMTF6bS0xIDFIMTB2MmgxMnYtMkgxMnYyaDh2MkgxMnYyaDh2MkgxMlYxN2g4di0ySDEyVjEzaDh2LTJIMTJ2LTFoMlYxMEgxMXoiLz48cGF0aGggZmlsbD0iI0Q0ODMwMCIgZD0iTTEyIDExaDh2MkgxMnoiLz48cGF0aCBmaWxsPSIjRkZDNjAwIiBkPSJNMTIgMTNoOHYySDEyek0xMiAxNWg4djJIMTJ6TTEyIDE3aDh2MkgxMnoiLz48L3N2Zz4=",
-                droid: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0iIzgyODk4RiIgZD0iTTQgMThoMnYxNEg0em0yMi0xaDJ2MTNIMjZWMjdoLTR2LTJoNHYtN2gydjZoNHYtNWgydjRoMnYtM2gyek0xMCAxMmgxMnY4SDEweiIvPjxwYXRoIGZpbGw9IiM1RTU5NTEiIGQ9Ik0xOCAyOGgydjJIMTh6bS04LTFoMnYySDEwem0xMC0xaDJ2Mkg4djJoOHYtMmg0djJIMjJ2LTJIMjR2LTJIMjB2MmgtMnYtMmg0djJoNHYtMkg4djJoMnYtMmg4djJIMjJ2LTJoLTJ2MmgtNHYtMmg4djJoMnYtMmgtMlYyNWgydi0yaC0ydi0yaC0ydi0yaC0ydi0yaC0yaC0yaC0yaC0yaC0yaC0yaDJ2Mmg4djJoNHptLTQtMmgtNHYtMmg0em0tNS0xaDJ2MUgxMXptMTAgMGgydjFIMjF6TTggMTVoMnYySDh6bTE2IDBoMnYySDI0ek0xMCAxNGgydjJIMTB6bTEyIDBoMnYySDIyek04IDEzaDJ2MUg4em0xNiAwaDJ2MUgyNHpNOCAxMmgydjFIN3YyaDJ2LTJIMTB2LTFoMnYySDd2LTFoMlYxMUg4eiIvPjxwYXRoIGZpbGw9IiNDMkNFRkYiIGQ9Ik0xMCAyMmgxMnYxSDEwem0xIDVoOHYxSDExem0wIDJoOHYxSDExeiIvPjxwYXRoIGZpbGw9IiMyMjIyMjIiIGQ9Ik0xMCA4aDEyVjZIMTB6bTEgMmgxMHYxSDExek0xMCAxMGgxMnYySDEweiIvPjxwYXRoIGZpbGw9IiNGRjM0NEEiIGQ9Ik0xNCA5aDR2MUgxNHoiLz48L3N2Zz4="
+                trader: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0iIzMzMjEwRSIgZD0iTTYgMzFoNHYxSDZ6TTI0IDMxaDR2MUgyNHpNOSAzMGgydjFIOW0xNC0waDJ2MUgyM3ptLTItMWgydjJIMjF6bS0xMi0xaDJ2Mkg5ek04IDIzaDJ2MUg4em0xNiAwaDJ2MUgyNHptLTEgMWgydjFIMjN6bS0xNi0xaDJ2MUg3em0xNy0yaDJ2Mkg3djJoMnYtMmgxNnYyaDJ2LTJIMjRaIi8+PHBhdGggZmlsbD0iIzJGMzgzMyIgZD0iTTggMjJoMnYxSDh6bTE2IDBoMnYxSDI0ek04IDIxaDJ2MUg4em0xNiAwaDJ2MUgyNHptLTE2IDBoMnYxSDh6bTE2IDBoMnYxSDI0eiIvPjxwYXRoIGZpbGw9IiM3RDI5MEIiIGQ9Ik0xMCAyNGgydjJIMTB6bTEyIDBoMnYySDIyek0xMiAyNmgydjJIMTJ6bTggMGgydjJIMjB6Ii8+PHBhdGggZmlsbD0iI0E0M0MxMyIgZD0iTTEzIDIySDl2Mmg0em0xMCAwaDJ2MkgxNVYyMmg0djJoNHYtMnoiLz48cGF0aCBmaWxsPSIjRTM2MzNEIiBkPSJNMTMgMTZoNnYySDEzWiIvPjxwYXRoIGZmlsbD0iI0ZGRkE4MkUiIGQ9Ik0xMSA5aDEwdjJIMTF6bS0xIDFIMTB2MmgxMnYtMkgxMnYyaDh2MkgxMnYyaDh2MkgxMlYxN2g4di0ySDEyVjEzaDh2LTJIMTJ2LTFoMlYxMEgxMXoiLz48cGF0aGggZmlsbD0iI0Q0ODMwMCIgZD0iTTEyIDExaDh2MkgxMnoiLz48cGF0aCBmaWxsPSIjRkZDNjAwIiBkPSJNMTIgMTNoOHYySDEyek0xMiAxNWg4djJIMTJ6TTEyIDE3aDh2MkgxMnoiLz48L3N2Zz4=",
+                droid: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0iIzgyODk4RiIgZD0iTTYgMThoMnYxM0g2ek0yNiAxOGgydjEzSDI2eiIvPjxwYXRoIGZpbGw9IiM1RTU5NTEiIGQ9Ik04IDI4aDIwVjI2SDh6bTAtMmgyMFYxMEg4eiIvPjxwYXRoIGZpbGw9IiNDMkNFRkYiIGQ9Ik0xMCAyNGgxMnYySDEwem0wLThoMTJ2MkgxMHptMC0yaDEydjJIMTB6bTAtMmgydjJIMTB6bTEwIDBoMnYySDIweiIvPjxwYXRoIGZpbGw9IiMyMjIyMjIiIGQ9Ik0xMCA4aDEyVjZIMTB6bTEgMmgxMHYxSDExek0xMCAxMGgxMnYySDEweiIvPjxwYXRoIGZpbGw9IiNGRjM0NEEiIGQ9Ik0xNCA5aDR2MUgxNHoiLz48L3N2Zz4="
             }
         };
 
-        // --- GAME STATE ---
-        let gameState = {};
-        function resetGameState() {
-            gameState = {
-                connected: false, playerAddress: '', playerAvatar: '', isMuted: gameState.isMuted || false,
-                score: 0, selectedHave: null, selectedWant: null, inventories: {}, wants: {}, intents: [],
-            };
-        }
-
-        // --- DOM ELEMENTS ---
         const dom = {
             connectBtn: document.getElementById('connect-btn'), disconnectBtn: document.getElementById('disconnect-btn'),
             playerAddress: document.getElementById('player-address'), playerAvatar: document.getElementById('player-avatar'),
@@ -312,123 +288,113 @@
             howToPlayBtn: document.getElementById('how-to-play-btn'), muteBtn: document.getElementById('mute-btn'),
         };
         
-        // --- AUDIO CONTROLLER ---
+        document.getElementById('avatar-img-mage').src = B64_ASSETS.avatars.mage;
+        document.getElementById('avatar-img-trader').src = B64_ASSETS.avatars.trader;
+        document.getElementById('avatar-img-droid').src = B64_ASSETS.avatars.droid;
+
         const AudioController = {
-            audioCtx: null, masterGain: null, musicSource: null, isPlaying: false,
+            ctx: null, masterGain: null, musicSource: null, isPlaying: false, isMuted: true,
             init() {
-                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                this.masterGain = this.audioCtx.createGain();
-                this.masterGain.gain.value = 1;
-                this.masterGain.connect(this.audioCtx.destination);
+                if (this.ctx) return;
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.connect(this.ctx.destination);
+                this.toggleMute(true);
             },
             playSound(type) {
-                if (!this.audioCtx || gameState.isMuted) return;
-                const oscillator = this.audioCtx.createOscillator();
-                const gainNode = this.audioCtx.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(this.masterGain);
+                if (!this.ctx || this.isMuted) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                const now = this.ctx.currentTime;
                 
                 switch (type) {
                     case 'click':
-                        oscillator.type = 'triangle';
-                        oscillator.frequency.setValueAtTime(880, this.audioCtx.currentTime);
-                        gainNode.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + 0.2);
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(880, now);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
                         break;
                     case 'create':
-                        oscillator.type = 'sine';
-                        oscillator.frequency.setValueAtTime(440, this.audioCtx.currentTime);
-                        oscillator.frequency.exponentialRampToValueAtTime(880, this.audioCtx.currentTime + 0.3);
-                        gainNode.gain.setValueAtTime(0.4, this.audioCtx.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + 0.3);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(440, now);
+                        osc.frequency.linearRampToValueAtTime(880, now + 0.2);
+                        gain.gain.setValueAtTime(0.3, now);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
                         break;
                     case 'success':
-                         [600, 800, 1200].forEach((freq, i) => {
-                            const osc = this.audioCtx.createOscillator();
-                            const gn = this.audioCtx.createGain();
-                            osc.type = 'sine';
-                            osc.connect(gn);
-                            gn.connect(this.masterGain);
-                            osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime + i * 0.1);
-                            gn.gain.setValueAtTime(0.2, this.audioCtx.currentTime + i * 0.1);
-                            gn.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + i * 0.1 + 0.2);
-                            osc.start(this.audioCtx.currentTime + i * 0.1);
-                            osc.stop(this.audioCtx.currentTime + i * 0.1 + 0.3);
-                        });
-                        return; // return to prevent single oscillator logic
+                        [659, 783, 1046].forEach((f, i) => this.playTone(f, 'sine', 0.15, i * 0.1, 0.2));
+                        return;
                     case 'win':
-                        [523, 659, 783, 1046].forEach((freq, i) => {
-                            const osc = this.audioCtx.createOscillator();
-                            const gn = this.audioCtx.createGain();
-                            osc.type = 'triangle';
-                            osc.connect(gn);
-                            gn.connect(this.masterGain);
-                            osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime + i * 0.15);
-                            gn.gain.setValueAtTime(0.3, this.audioCtx.currentTime + i * 0.15);
-                            gn.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + i * 0.15 + 0.4);
-                            osc.start(this.audioCtx.currentTime + i * 0.15);
-                            osc.stop(this.audioCtx.currentTime + i * 0.15 + 0.5);
-                        });
+                        [523, 659, 783, 1046].forEach((f, i) => this.playTone(f, 'triangle', 0.2, i * 0.15, 0.4));
                         return;
                 }
-                oscillator.start();
-                oscillator.stop(this.audioCtx.currentTime + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
             },
-            toggleMusic() {
-                if (!this.audioCtx) this.init();
-                
-                gameState.isMuted = !gameState.isMuted;
-                dom.muteBtn.textContent = gameState.isMuted ? "Unmute" : "Mute";
-                this.masterGain.gain.setValueAtTime(gameState.isMuted ? 0 : 1, this.audioCtx.currentTime);
+            playTone(freq, type, vol, delay, duration) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                const now = this.ctx.currentTime + delay;
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                osc.start(now);
+                osc.stop(now + duration + 0.1);
+            },
+            toggleMute(forceMute) {
+                if (!this.ctx) this.init();
+                this.isMuted = (typeof forceMute === 'boolean') ? forceMute : !this.isMuted;
+                dom.muteBtn.textContent = this.isMuted ? "Unmute" : "Mute";
+                this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 1, this.ctx.currentTime, 0.01);
 
-                if (!this.isPlaying && !gameState.isMuted) {
-                    this.musicSource = this.audioCtx.createOscillator();
-                    this.musicSource.type = 'sine';
-                    this.musicSource.frequency.value = 55; // Low A drone
-                    const musicGain = this.audioCtx.createGain();
-                    musicGain.gain.value = 0.1;
+                if (!this.isPlaying && !this.isMuted) {
+                    this.musicSource = this.ctx.createOscillator();
+                    this.musicSource.type = 'sawtooth';
+                    this.musicSource.frequency.value = 40;
+                    const musicGain = this.ctx.createGain();
+                    musicGain.gain.value = 0.05;
                     this.musicSource.connect(musicGain).connect(this.masterGain);
                     this.musicSource.start();
-
-                    const lfo = this.audioCtx.createOscillator();
-                    lfo.frequency.value = 0.5;
-                    const lfoGain = this.audioCtx.createGain();
-                    lfoGain.gain.value = 5; // modulation depth in Hz
-                    lfo.connect(lfoGain).connect(this.musicSource.frequency);
-                    lfo.start();
                     this.isPlaying = true;
                 }
             },
             resumeContext() {
-                if (this.audioCtx && this.audioCtx.state === 'suspended') {
-                    this.audioCtx.resume();
-                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
             }
         };
 
-        // --- CONSTANTS ---
-        const ALL_RESOURCES = [
-            { name: 'Iron', baseColor: '#c0c0c0' }, { name: 'Gold', baseColor: '#ffd700' },
-            { name: 'Water', baseColor: '#4d94ff' }, { name: 'Oxygen', baseColor: '#a6d8f0' },
-            { name: 'Silicon', baseColor: '#8a8a8a' }, { name: 'Plutonium', baseColor: '#70ff70' },
-            { name: 'Lithium', baseColor: '#ff7f7f' }, { name: 'Helium-3', baseColor: '#ffb366' },
-            { name: 'Carbon', baseColor: '#505050' }, { name: 'Titanium', baseColor: '#b0a4c4' }
-        ];
+        const ALL_RESOURCES = [ { name: 'Iron', baseColor: '#c0c0c0' }, { name: 'Gold', baseColor: '#ffd700' }, { name: 'Water', baseColor: '#4d94ff' }, { name: 'Oxygen', baseColor: '#a6d8f0' }, { name: 'Silicon', baseColor: '#8a8a8a' }, { name: 'Plutonium', baseColor: '#70ff70' }, { name: 'Lithium', baseColor: '#ff7f7f' }, { name: 'Helium-3', baseColor: '#ffb366' }, { name: 'Carbon', baseColor: '#505050' }, { name: 'Titanium', baseColor: '#b0a4c4' } ];
         const BOTS = [{ id: 'bot1', name: 'Trader-Bot α' }, { id: 'bot2', name: 'Trader-Bot β' }, { id: 'bot3', name: 'Trader-Bot γ' }];
         const NUM_RESOURCES_PER_PLAYER = 4;
+        let gameState = {};
 
-        // --- UI & RENDER LOGIC ---
+        function resetGameState(isDisconnect = false) {
+            const wasMuted = AudioController.isMuted;
+            gameState = {
+                connected: false, playerAddress: '', playerAvatar: '',
+                score: 0, selectedHave: null, selectedWant: null,
+                inventories: {}, wants: {}, intents: [],
+            };
+            if (isDisconnect) {
+                AudioController.isMuted = wasMuted;
+            }
+        }
+
         function render() {
             dom.playerAddress.textContent = gameState.connected ? `${gameState.playerAddress.substring(0, 6)}...${gameState.playerAddress.substring(38)}` : "Not Connected";
             dom.playerAvatar.src = gameState.playerAvatar ? B64_ASSETS.avatars[gameState.playerAvatar] : '';
-            dom.playerAvatar.style.display = gameState.playerAvatar ? 'block' : 'none';
+            dom.playerAvatar.style.opacity = gameState.playerAvatar ? '1' : '0';
             dom.score.textContent = `Score: ${gameState.score}`;
             const highscore = localStorage.getItem(gameState.playerAddress + "_hs") || 0;
             dom.highscore.textContent = `High Score: ${highscore}`;
             dom.inventory.innerHTML = (gameState.inventories.player || []).map(r => `<div class="resource-item" data-name="${r.name}">${generateResourceSVG(r)}<p>${r.name}</p></div>`).join('');
             dom.wants.innerHTML = (gameState.wants.player || []).map(r => `<div class="resource-item" data-name="${r.name}">${generateResourceSVG(r)}<p>${r.name}</p></div>`).join('');
             dom.intentsList.innerHTML = gameState.intents.map((intent, i) => `<div class="intent" id="intent-${i}"><p><strong>${BOTS.find(p=>p.id===intent.playerId)?.name || 'You'}:</strong> Wants ${intent.want.name} / Gives ${intent.have.name}</p></div>`).join('');
-            renderGrid();
             addResourceEventListeners();
         }
 
@@ -440,7 +406,6 @@
                     if (container?.firstChild) container.firstChild.classList.add('fly-out');
                 });
             }
-
             setTimeout(() => {
                 tiles.forEach(t => t.innerHTML = '');
                 (gameState.inventories.player || []).forEach((item, index) => {
@@ -452,56 +417,33 @@
             }, flyOutIndices.length > 0 ? 500 : 0);
         }
 
-        function addSolverLog(message, type) {
-            const logEntry = document.createElement('p');
-            logEntry.className = type === 'success' ? 'log-success' : 'log-fail';
-            logEntry.textContent = `> ${message}`;
-            dom.solverLog.appendChild(logEntry);
-            dom.solverLog.scrollTop = dom.solverLog.scrollHeight;
-        }
-
-        // --- GAMEPLAY LOGIC ---
         function initGame() {
             dom.runSolverBtn.disabled = false;
             dom.isometricGrid.innerHTML = '';
             for (let i = 0; i < 16; i++) dom.isometricGrid.appendChild(Object.assign(document.createElement('div'), { className: 'tile' }));
-            resetGameStateData();
-            createBotIntents();
-            render();
-        }
-
-        function resetGameStateData() {
-            gameState.score = 0;
-            gameState.intents = [];
-            gameState.selectedHave = null;
-            gameState.selectedWant = null;
             
-            // Deterministic setup to guarantee solvable loops
+            gameState.score = 0;
             let resources = [...ALL_RESOURCES].sort(() => 0.5 - Math.random());
             const players = [{id: 'player', name: 'Player'}, ...BOTS];
-            
-            players.forEach((player, i) => {
+            players.forEach((player) => {
                 gameState.inventories[player.id] = [];
-                for(let j=0; j<NUM_RESOURCES_PER_PLAYER; j++) {
-                    gameState.inventories[player.id].push(resources.pop());
-                }
+                for(let j=0; j<NUM_RESOURCES_PER_PLAYER; j++) gameState.inventories[player.id].push(resources.pop());
             });
-
             players.forEach((player, i) => {
                 const nextPlayer = players[(i + 1) % players.length];
                 gameState.wants[player.id] = gameState.inventories[nextPlayer].slice(0, NUM_RESOURCES_PER_PLAYER);
             });
+
+            createBotIntents();
+            render();
+            addSolverLog("New game started. Create your intents.", 'info');
         }
-        
+
         function solver() {
             dom.runSolverBtn.disabled = true;
-            let tradeFound = false;
-            let playerInvolved = false;
-            let intentsInvolvedCount = 0;
+            let tradeFound = false, playerInvolved = false, intentsInvolvedCount = 0;
             const playerInventoryBefore = [...(gameState.inventories.player || [])];
-
             const intents = gameState.intents;
-            // Find 3-way trade
             for (let i = 0; i < intents.length && !tradeFound; i++) {
                 for (let j = 0; j < intents.length && !tradeFound; j++) {
                     for (let k = 0; k < intents.length && !tradeFound; k++) {
@@ -516,7 +458,6 @@
                     }
                 }
             }
-            // Find 2-way trade
             if(!tradeFound) {
                 for (let i = 0; i < intents.length && !tradeFound; i++) {
                     for (let j = i + 1; j < intents.length && !tradeFound; j++) {
@@ -547,14 +488,10 @@
         function executeTrade(intentIndices, playerInventoryBefore) {
             const involvedIntents = intentIndices.map(i => gameState.intents[i]);
             const tradeMap = {};
-            
-            involvedIntents.forEach(intent => {
+            involvedIntents.forEach((intent, i) => {
                 let receiverIntent;
-                if(involvedIntents.length === 2) {
-                   receiverIntent = involvedIntents.find(p => p.playerId !== intent.playerId);
-                } else {
-                   receiverIntent = involvedIntents.find(p => p.want.name === intent.have.name);
-                }
+                if(involvedIntents.length === 2) receiverIntent = involvedIntents[i === 0 ? 1 : 0];
+                else receiverIntent = involvedIntents.find(p => p.want.name === intent.have.name);
                 tradeMap[intent.playerId] = { gives: intent.have, takes: receiverIntent.have };
             });
 
@@ -563,13 +500,11 @@
                 const index = playerInventoryBefore.findIndex(item => item.name === tradeMap.player.gives.name);
                 if (index !== -1) flyOutIndices.push(index);
             }
-            
             for (const playerId in tradeMap) {
                 const trade = tradeMap[playerId];
                 gameState.inventories[playerId] = gameState.inventories[playerId].filter(r => r.name !== trade.gives.name);
                 gameState.inventories[playerId].push(trade.takes);
             }
-            
             const flyInItems = [];
              if(tradeMap.player) {
                 const newIndex = gameState.inventories.player.findIndex(item => item.name === tradeMap.player.takes.name);
@@ -577,44 +512,41 @@
             }
 
             renderGrid(flyOutIndices, flyInItems);
-
             const sortedIndices = intentIndices.sort((a,b) => b-a);
             sortedIndices.forEach(i => document.getElementById(`intent-${i}`)?.classList.add('flash'));
-
             setTimeout(() => {
                 sortedIndices.forEach(i => gameState.intents.splice(i, 1));
                 render();
                 createBotIntents();
             }, 1000);
         }
-        
-        // --- WALLET & SESSION ---
+
         async function connectWallet() {
             AudioController.playSound('click');
-            if (window.ethereum) {
-                try {
-                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    gameState.playerAddress = accounts[0];
-                    gameState.connected = true;
-                    
-                    dom.connectBtn.classList.add('hidden');
-                    dom.disconnectBtn.classList.remove('hidden');
+            if (!window.ethereum) return alert('MetaMask not installed! Please install it to play.');
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                gameState.playerAddress = accounts[0];
+                gameState.connected = true;
+                dom.connectBtn.classList.add('hidden');
+                dom.disconnectBtn.classList.remove('hidden');
 
-                    const savedAvatar = localStorage.getItem(gameState.playerAddress + '_avatar');
-                    if (savedAvatar) {
-                        gameState.playerAvatar = savedAvatar;
-                        initGame();
-                    } else {
-                        dom.avatarModal.style.display = 'flex';
-                    }
-                } catch (error) { alert("Wallet connection was rejected."); }
-            } else { alert('MetaMask not installed! Please install it to play.'); }
+                const savedAvatar = localStorage.getItem(gameState.playerAddress + '_avatar');
+                if (savedAvatar) {
+                    gameState.playerAvatar = savedAvatar;
+                    initGame();
+                } else {
+                    dom.avatarModal.style.display = 'flex';
+                }
+            } catch (error) {
+                console.log("Wallet connection rejected by user.");
+            }
         }
-
+        
         function disconnectWallet() {
             AudioController.playSound('click');
-            localStorage.removeItem(gameState.playerAddress + '_avatar');
-            resetGameState();
+            const addr = gameState.playerAddress;
+            resetGameState(true);
             dom.connectBtn.classList.remove('hidden');
             dom.disconnectBtn.classList.add('hidden');
             dom.runSolverBtn.disabled = true;
@@ -622,12 +554,11 @@
             render();
             dom.isometricGrid.innerHTML = '';
             dom.intentsList.innerHTML = '';
-            addSolverLog('Player disconnected.', 'fail');
+            addSolverLog(`Player ${addr.substring(0,6)} disconnected.`, 'fail');
         }
 
-        // --- MODAL & SETUP LOGIC ---
         function main() {
-            // Event Listeners
+            resetGameState();
             dom.connectBtn.addEventListener('click', connectWallet);
             dom.disconnectBtn.addEventListener('click', disconnectWallet);
             dom.createIntentBtn.addEventListener('click', () => {
@@ -645,7 +576,7 @@
                 render();
             });
             dom.runSolverBtn.addEventListener('click', solver);
-            dom.muteBtn.addEventListener('click', AudioController.toggleMusic.bind(AudioController));
+            dom.muteBtn.addEventListener('click', () => AudioController.toggleMute());
             
             document.querySelectorAll('.avatar-choice').forEach(el => el.addEventListener('click', (e) => {
                 AudioController.playSound('click');
@@ -654,7 +585,6 @@
                 gameState.playerAvatar = e.currentTarget.dataset.avatar;
                 dom.confirmAvatarBtn.disabled = false;
             }));
-
             dom.confirmAvatarBtn.addEventListener('click', () => {
                 AudioController.playSound('create');
                 localStorage.setItem(gameState.playerAddress + '_avatar', gameState.playerAvatar);
@@ -665,23 +595,20 @@
             dom.howToPlayBtn.addEventListener('click', () => { dom.howToPlayModal.style.display = 'flex'; AudioController.playSound('click'); });
             document.getElementById('close-how-to-play-btn').addEventListener('click', () => { dom.howToPlayModal.style.display = 'none'; AudioController.playSound('click'); });
             
-            document.body.addEventListener('click', () => AudioController.resumeContext(), { once: true });
-
-            if (!localStorage.getItem('anomaverse_visited_3.0')) {
+            document.body.addEventListener('click', () => AudioController.init(), { once: true });
+            if (!localStorage.getItem('anomaverse_visited_final')) {
                 dom.howToPlayModal.style.display = 'flex';
-                localStorage.setItem('anomaverse_visited_3.0', 'true');
+                localStorage.setItem('anomaverse_visited_final', 'true');
             }
-
-            resetGameState();
             render();
         }
         
-        // --- Functions not in main for brevity in reading ---
-        function generateResourceSVG(r){const s=r.name.split('').reduce((a,c)=>a+c.charCodeAt(0),0),t=s%3;return t===0?`<svg viewBox="0 0 100 100"><polygon points="50,10 90,40 70,90 30,90 10,40" fill="${r.baseColor}" stroke="#fff" stroke-width="2"/><polygon points="50,10 50,90 10,40" fill="rgba(255,255,255,0.3)"/><polygon points="50,10 50,90 90,40" fill="rgba(0,0,0,0.2)"/></svg>`:t===1?`<svg viewBox="0 0 100 100"><defs><radialGradient id="grad-${r.name}"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="${r.baseColor}"/></radialGradient></defs><circle cx="50" cy="50" r="45" fill="url(#grad-${r.name})"/><circle cx="60" cy="35" r="10" fill="rgba(255,255,255,0.5)"/></svg>`:`<svg viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="70" rx="5" fill="#555" /><rect x="15" y="25" width="70" height="15" fill="${r.baseColor}" /><rect x="40" y="10" width="20" height="10" fill="#333" /></svg>`}
-        function addResourceEventListeners(){dom.inventory.querySelectorAll('.resource-item').forEach(e=>e.addEventListener('click',()=>selectResource(e,'have')));dom.wants.querySelectorAll('.resource-item').forEach(e=>e.addEventListener('click',()=>selectResource(e,'want')))}
-        function selectResource(e,t){AudioController.playSound('click');const o=`selected${t.charAt(0).toUpperCase()+t.slice(1)}`;gameState[o]&&gameState[o].classList.remove('selected'),gameState[o]=e,e.classList.add('selected'),dom.createIntentBtn.disabled=!(gameState.selectedHave&&gameState.selectedWant)}
-        function createBotIntents(){BOTS.forEach(t=>{if(!gameState.intents.some(e=>e.playerId===t.id)){const e=gameState.inventories[t.id][Math.floor(Math.random()*gameState.inventories[t.id].length)],o=gameState.wants[t.id][Math.floor(Math.random()*gameState.wants[t.id].length)];e&&o&&gameState.intents.push({playerId:t.id,have:e,want:o})}})}
-        function checkWinCondition(){const t=new Set((gameState.wants.player||[]).map(e=>e.name));if(t.size===0)return;const o=new Set((gameState.inventories.player||[]).map(e=>e.name)),n=[...t].every(e=>o.has(e));if(n){AudioController.playSound('win'),dom.finalScore.textContent=`Final Score: ${gameState.score}`;const e=parseInt(localStorage.getItem(gameState.playerAddress+"_hs")||"0");gameState.score>e&&localStorage.setItem(gameState.playerAddress+"_hs",gameState.score),setTimeout(()=>dom.winModal.style.display="flex",1e3)}}
+        const generateResourceSVG=r=>{const a=r.name.split("").reduce((c,d)=>c+d.charCodeAt(0),0)%3;return 0===a?`<svg viewBox="0 0 100 100"><polygon points="50,10 90,40 70,90 30,90 10,40" fill="${r.baseColor}" stroke="#fff" stroke-width="2"/><polygon points="50,10 50,90 10,40" fill="rgba(255,255,255,0.3)"/><polygon points="50,10 50,90 90,40" fill="rgba(0,0,0,0.2)"/></svg>`:1===a?`<svg viewBox="0 0 100 100"><defs><radialGradient id="grad-${r.name}"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="${r.baseColor}"/></radialGradient></defs><circle cx="50" cy="50" r="45" fill="url(#grad-${r.name})"/><circle cx="60" cy="35" r="10" fill="rgba(255,255,255,0.5)"/></svg>`:`<svg viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="70" rx="5" fill="#555" /><rect x="15" y="25" width="70" height="15" fill="${r.baseColor}" /><rect x="40" y="10" width="20" height="10" fill="#333" /></svg>`};
+        const addResourceEventListeners=()=>{dom.inventory.querySelectorAll('.resource-item').forEach(e=>e.addEventListener('click',()=>selectResource(e,'have')));dom.wants.querySelectorAll('.resource-item').forEach(e=>e.addEventListener('click',()=>selectResource(e,'want')))};
+        const selectResource=(e,t)=>{AudioController.playSound('click');const o=`selected${t.charAt(0).toUpperCase()+t.slice(1)}`;gameState[o]&&gameState[o].classList.remove('selected'),gameState[o]=e,e.classList.add('selected'),dom.createIntentBtn.disabled=!(gameState.selectedHave&&gameState.selectedWant)};
+        const createBotIntents=()=>{BOTS.forEach(t=>{if(!gameState.intents.some(e=>e.playerId===t.id)){const e=gameState.inventories[t.id][Math.floor(Math.random()*gameState.inventories[t.id].length)],o=gameState.wants[t.id][Math.floor(Math.random()*gameState.wants[t.id].length)];e&&o&&gameState.intents.push({playerId:t.id,have:e,want:o})}}),render()};
+        const checkWinCondition=()=>{const t=new Set((gameState.wants.player||[]).map(e=>e.name));if(0===t.size)return;const o=new Set((gameState.inventories.player||[]).map(e=>e.name));if([...t].every(e=>o.has(e))){AudioController.playSound('win'),dom.finalScore.textContent=`Final Score: ${gameState.score}`;const e=parseInt(localStorage.getItem(gameState.playerAddress+"_hs")||"0");gameState.score>e&&localStorage.setItem(gameState.playerAddress+"_hs",gameState.score),setTimeout(()=>dom.winModal.style.display="flex",1e3)}};
+        const addSolverLog=(e,t)=>{const o=document.createElement("p");o.className="log-"+t,o.textContent=`> ${e}`,dom.solverLog.appendChild(o),dom.solverLog.scrollTop=dom.solverLog.scrollHeight};
 
         main();
     });
