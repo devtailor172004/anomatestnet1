@@ -2,18 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anomaverse - The Intent-Driven Economy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Anomaverse 2.0 - The Intent-Driven Economy</title>
     <style>
         :root {
             --background-color: #0d0d0f;
             --text-color: #e0e0e0;
             --primary-color: #ff3b81;
             --secondary-color: #00e5ff;
-            --container-bg: rgba(26, 26, 30, 0.8);
+            --container-bg: rgba(26, 26, 30, 0.85);
             --border-color: #333;
             --font-family: 'Consolas', 'Courier New', monospace;
             --tile-size: 80px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px var(--primary-color); }
+            50% { box-shadow: 0 0 20px var(--primary-color); }
+        }
+        @keyframes item-fly-in {
+            0% { transform: translateZ(200px) rotateZ(-45deg) rotateX(-60deg); opacity: 0; }
+            100% { transform: translateZ(0) rotateZ(-45deg) rotateX(-60deg); opacity: 1; }
+        }
+        @keyframes item-fly-out {
+            0% { transform: translateZ(0) rotateZ(-45deg) rotateX(-60deg); opacity: 1; }
+            100% { transform: translateZ(-200px) rotateZ(-45deg) rotateX(-60deg); opacity: 0; }
         }
 
         body {
@@ -29,16 +43,17 @@
             overflow: hidden;
             background-image: radial-gradient(circle, #1a1a1f 1px, transparent 1px);
             background-size: 20px 20px;
+            animation: fadeIn 1s ease-in-out;
         }
 
         .game-wrapper {
             display: grid;
-            grid-template-columns: 250px 1fr 250px;
-            gap: 20px;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 15px;
             width: 100%;
-            max-width: 1400px;
-            height: 95vh;
-            padding: 20px;
+            max-width: 1600px;
+            height: 98vh;
+            padding: 10px;
             box-sizing: border-box;
         }
 
@@ -46,11 +61,11 @@
             background-color: var(--container-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 15px;
-            backdrop-filter: blur(5px);
+            padding: 20px;
+            backdrop-filter: blur(8px);
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
+            overflow: hidden;
         }
         
         .panel h2, .panel h3 {
@@ -58,188 +73,144 @@
             text-shadow: 0 0 4px var(--primary-color);
             margin-top: 0;
             text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
         }
 
-        /* Left Panel */
-        #player-panel {
-            justify-content: space-between;
-        }
+        /* --- Left Panel: Player --- */
         #avatar-container {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             margin: 10px auto;
             border: 2px solid var(--secondary-color);
             border-radius: 50%;
             padding: 5px;
+            transition: transform 0.3s;
         }
-        #player-address {
-            font-size: 12px;
-            text-align: center;
-            word-break: break-all;
-            color: var(--secondary-color);
-        }
-        #score, #highscore {
-            text-align: center;
-            font-size: 18px;
-            margin: 5px 0;
-        }
+        #avatar-container:hover { transform: scale(1.05); }
+        #avatar-container img { width: 100%; height: 100%; border-radius: 50%; }
+        #player-address { font-size: 12px; text-align: center; word-break: break-all; color: var(--secondary-color); margin: 5px 0 15px; }
+        #score, #highscore { text-align: center; font-size: 20px; margin: 10px 0; }
+        
+        .button-group { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
         button {
             background-color: var(--primary-color);
-            color: var(--background-color);
+            color: #0d0d0f;
             border: none;
             padding: 12px;
             border-radius: 5px;
             cursor: pointer;
             font-family: var(--font-family);
+            font-weight: bold;
             font-size: 16px;
             transition: all 0.2s ease;
-            width: 100%;
-            margin-top: 10px;
         }
-        button:hover {
-            box-shadow: 0 0 15px var(--primary-color);
-            transform: translateY(-2px);
-        }
-        button:disabled {
-            background-color: #555;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
+        button:hover:not(:disabled) { box-shadow: 0 0 15px var(--primary-color); transform: translateY(-2px); }
+        button:disabled { background-color: #444; color: #888; cursor: not-allowed; }
+        .secondary-button { background-color: transparent; border: 1px solid var(--secondary-color); color: var(--secondary-color); }
+        .secondary-button:hover:not(:disabled) { background-color: var(--secondary-color); color: #0d0d0f; box-shadow: 0 0 15px var(--secondary-color); }
 
-        /* Center Panel - Game Board */
-        #game-board {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            perspective: 1000px;
-        }
-
-        #isometric-grid {
-            display: grid;
-            grid-template-columns: repeat(5, var(--tile-size));
-            transform: rotateX(60deg) rotateZ(45deg);
-            transform-style: preserve-3d;
-        }
-
+        /* --- Center Panel: Game Board --- */
+        #game-world-panel { justify-content: center; align-items: center; perspective: 1000px; }
+        #isometric-grid { display: grid; grid-template-columns: repeat(5, var(--tile-size)); transform: rotateX(60deg) rotateZ(45deg); transform-style: preserve-3d; }
         .tile {
             width: var(--tile-size);
             height: var(--tile-size);
             background-color: rgba(0, 229, 255, 0.1);
             border: 1px solid rgba(0, 229, 255, 0.3);
             box-sizing: border-box;
-            transition: all 0.3s ease;
             position: relative;
         }
-        .tile:hover {
-            background-color: rgba(255, 59, 129, 0.3);
-            border-color: var(--primary-color);
-        }
-        .tile .item-svg {
-            position: absolute;
-            width: 80%;
-            height: 80%;
-            top: 10%;
-            left: 10%;
+        .tile .item-container {
+            position: absolute; width: 100%; height: 100%;
             transform: rotateZ(-45deg) rotateX(-60deg);
+            display: flex; justify-content: center; align-items: center;
         }
+        .tile .item-svg { width: 80%; height: 80%; }
+        .item-svg.fly-in { animation: item-fly-in 0.5s ease-out forwards; }
+        .item-svg.fly-out { animation: item-fly-out 0.5s ease-out forwards; }
         
-
-        /* Right Panel */
-        .resource-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
+        /* --- Right Panel: Intents --- */
+        .scrollable-content { overflow-y: auto; padding-right: 10px; }
+        .resource-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-bottom: 20px;}
         .resource-item {
-            border: 2px solid var(--border-color);
-            border-radius: 5px;
-            padding: 5px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            border: 2px solid var(--border-color); border-radius: 5px; padding: 5px;
+            text-align: center; cursor: pointer; transition: all 0.2s ease;
         }
-        .resource-item.selected {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 10px var(--primary-color);
-        }
-        .resource-item svg {
-            width: 50px;
-            height: 50px;
-            margin: 0 auto;
-        }
-        .resource-item p {
-            margin: 5px 0 0;
-            font-size: 12px;
-        }
+        .resource-item.selected { border-color: var(--primary-color); transform: scale(1.05); box-shadow: 0 0 10px var(--primary-color); }
+        .resource-item:hover { border-color: var(--secondary-color); }
+        .resource-item svg { width: 50px; height: 50px; margin: 0 auto; }
+        .resource-item p { margin: 5px 0 0; font-size: 12px; }
         
+        #intents-list { max-height: 200px; overflow-y: auto; }
         #intents-list .intent {
-            border: 1px dashed var(--secondary-color);
-            padding: 8px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            transition: all 0.5s;
+            border: 1px dashed var(--secondary-color); padding: 8px; margin-bottom: 10px;
+            border-radius: 4px; font-size: 13px; transition: all 0.5s;
         }
-
-        .intent.flash {
-            animation: flash 1s ease;
-        }
-
+        .intent.flash { animation: flash 1s ease; }
         @keyframes flash {
             0% { background-color: var(--container-bg); }
-            50% { background-color: var(--primary-color); }
+            50% { background-color: var(--primary-color); color: #0d0d0f; }
             100% { background-color: var(--container-bg); }
         }
 
-        #log-list li {
-            font-size: 12px;
-            margin-bottom: 5px;
-            color: #aaa;
-        }
-
-        /* Modal */
+        /* --- Modals --- */
         .modal {
-            display: none;
-            position: fixed;
-            z-index: 100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            justify-content: center;
-            align-items: center;
+            display: none; position: fixed; z-index: 100; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.8);
+            justify-content: center; align-items: center; backdrop-filter: blur(5px);
         }
         .modal-content {
-            background-color: var(--background-color);
-            padding: 30px;
-            border: 2px solid var(--primary-color);
-            width: 80%;
-            max-width: 500px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 0 20px var(--primary-color);
+            background-color: var(--background-color); padding: 30px;
+            border: 2px solid var(--primary-color); width: 90%; max-width: 600px;
+            border-radius: 8px; text-align: center; box-shadow: 0 0 20px var(--primary-color);
+            animation: fadeIn 0.5s;
         }
-        .modal-content h2 {
-            font-size: 2em;
-        }
+        .modal-content ul { text-align: left; list-style-type: '✨ '; line-height: 1.6; }
 
+        #avatar-selection { display: flex; justify-content: space-around; margin: 20px 0; }
+        .avatar-choice { border: 2px solid var(--border-color); border-radius: 50%; cursor: pointer; transition: all 0.2s; }
+        .avatar-choice:hover { border-color: var(--secondary-color); }
+        .avatar-choice.selected { border-color: var(--primary-color); animation: glow 1.5s infinite; }
+        .avatar-choice img { width: 100px; height: 100px; border-radius: 50%; }
+
+        /* --- Utility Controls --- */
+        #utility-controls { position: fixed; top: 15px; right: 15px; display: flex; gap: 10px; z-index: 101; }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .game-wrapper { grid-template-columns: 220px 1fr 220px; }
+            :root { --tile-size: 60px; }
+        }
+        @media (max-width: 900px) {
+            .game-wrapper { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; height: auto; }
+            #game-world-panel { min-height: 350px; }
+            .panel { padding: 15px; }
+        }
     </style>
 </head>
 <body>
+
+    <!-- Audio Elements are hidden but used by JS -->
+    <audio id="audio-bg" loop></audio>
+    <audio id="audio-click"></audio>
+    <audio id="audio-create"></audio>
+    <audio id="audio-success"></audio>
+    <audio id="audio-win"></audio>
 
     <div class="game-wrapper">
         <div class="panel" id="player-panel">
             <div>
                 <h2>Player Profile</h2>
-                <div id="avatar-container"></div>
+                <div id="avatar-container"><img id="player-avatar" src="" alt="Player Avatar"></div>
                 <p id="player-address">Not Connected</p>
                 <p id="score">Score: 0</p>
                 <p id="highscore">High Score: 0</p>
             </div>
-            <div>
-                 <button id="wallet-button">Connect Wallet</button>
+            <div class="button-group">
+                <button id="run-solver-btn" disabled>Run Solver</button>
+                <button id="disconnect-btn" class="secondary-button" style="display: none;">Disconnect</button>
+                <button id="connect-btn">Connect Wallet</button>
             </div>
         </div>
 
@@ -250,350 +221,508 @@
         </div>
 
         <div class="panel" id="intents-panel">
-            <div id="inventory-section" style="flex: 2;">
-                <h3>You Have:</h3>
+            <div class="scrollable-content">
+                <h3>Your Inventory</h3>
                 <div class="resource-grid" id="player-inventory"></div>
-                <h3>You Want:</h3>
+                <h3>Your Desired Items</h3>
                 <div class="resource-grid" id="player-wants"></div>
                 <button id="create-intent-btn" disabled>Create Intent</button>
-            </div>
-            <div id="solver-section" style="flex: 3;">
-                 <h3>Active Intents</h3>
-                 <div id="intents-list"></div>
+                <h3 style="margin-top: 20px;">Active Intents</h3>
+                <div id="intents-list"></div>
             </div>
         </div>
     </div>
     
+    <div id="utility-controls">
+        <button id="how-to-play-btn" class="secondary-button">?</button>
+        <button id="mute-btn" class="secondary-button">Mute</button>
+    </div>
+
+    <!-- Modals -->
+    <div id="how-to-play-modal" class="modal">
+        <div class="modal-content">
+            <h2>Welcome to Anomaverse!</h2>
+            <p>Your goal is to acquire all the items in your "Desired Items" list by bartering with other traders.</p>
+            <ul style="margin: 20px 0;">
+                <li><b>Connect:</b> Start by connecting your wallet to get a unique identity and choose an avatar.</li>
+                <li><b>Create Intents:</b> You can't trade directly. Select one item you HAVE and one you WANT, then click "Create Intent" to broadcast your wish to the network.</li>
+                <li><b>Run the Solver:</b> Click "Run Solver"! This powerful engine looks at ALL active intents and automatically executes fair trades, even complex 3-way deals.</li>
+                <li><b>Win:</b> The game is won when your inventory contains all of your desired items. Good luck, trader!</li>
+            </ul>
+            <button id="close-how-to-play-btn">Let's Trade!</button>
+        </div>
+    </div>
+
+    <div id="avatar-modal" class="modal">
+        <div class="modal-content">
+            <h2>Choose Your Avatar</h2>
+            <div id="avatar-selection">
+                <div class="avatar-choice" data-avatar="mage"><img id="avatar-img-mage" alt="Intent-Mage"></div>
+                <div class="avatar-choice" data-avatar="trader"><img id="avatar-img-trader" alt="Star-Trader"></div>
+                <div class="avatar-choice" data-avatar="voidwalker"><img id="avatar-img-voidwalker" alt="Void-Walker"></div>
+            </div>
+            <button id="confirm-avatar-btn" disabled>Confirm Identity</button>
+        </div>
+    </div>
+
     <div id="win-modal" class="modal">
         <div class="modal-content">
-            <h2>Intent Satisfied!</h2>
-            <p>Congratulations, you have acquired all your desired resources through the power of decentralized bartering!</p>
-            <p id="final-score"></p>
+            <h2>All Intents Satisfied!</h2>
+            <p>Congratulations, you have mastered the decentralized economy!</p>
+            <p id="final-score" style="font-size: 24px; color: var(--secondary-color);"></p>
             <button onclick="location.reload()">Trade Again</button>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- CONFIG & STATE ---
-            const ALL_RESOURCES = [
-                { name: 'Iron', baseColor: '#c0c0c0' }, { name: 'Gold', baseColor: '#ffd700' },
-                { name: 'Water', baseColor: '#4d94ff' }, { name: 'Oxygen', baseColor: '#a6d8f0' },
-                { name: 'Silicon', baseColor: '#8a8a8a' }, { name: 'Plutonium', baseColor: '#70ff70' },
-                { name: 'Lithium', baseColor: '#ff7f7f' }, { name: 'Helium-3', baseColor: '#ffb366' },
-                { name: 'Carbon', baseColor: '#505050' }, { name: 'Titanium', baseColor: '#b0a4c4' }
-            ];
-            const BOTS = [{ id: 'bot1', name: 'Trader-Bot α' }, { id: 'bot2', name: 'Trader-Bot β' }, { id: 'bot3', name: 'Trader-Bot γ' }];
-            const NUM_RESOURCES_PER_PLAYER = 4;
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- ASSETS (BASE64 ENCODED) ---
+        const B64_ASSETS = {
+            audio: {
+                music: "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1AACEwAARJA4AAAnGgAAMhAAH//7AEAADSAAAAEgAAABIAAABJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJSUlJ-",
+                click: "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAAERhdGEAAAAA//8/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/w==",
+                create: "data:audio/wav;base64,UklGRlIAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAAERhdGEPAAAA/v/8AP8A/wD9AP0A+QD3APgA9wD5APwA/QD+AP8BAgAEAPMA+gABAQACAAAAAPv/+wD6//MA9f/s//IA8//xAPYA8wD0APMA8QDgAOsA5gDpAOMA4wDMAK4ApgCjAJYAjwCEAIEAfAB4AGsAZQBjAGAAXwBdAFwAWQBXAFMAUgBRAD8AOwA1ADMANQA5ADwAPwA/ADsAOQAyAC8ALgAqACUALgAuAC0ALQAqACcAJgAjACIAHwAcABoAGgAZABgAFAASABMAFAAVABQAEwASABAAEAANAAwACwAKAAgABwAFAAMAAQAAAP7/+wD9//MA9v/vAPQA8gDxAO4A5ADfANQA0gDPAMgAwQC6ALcAtACxALEAsACsAKgApwCfAKAAoQCbAJYAlgCSAI8AiwCEAH8AeAB1AGgAZwBkAGIAYABeAFwAWQBWAFIAUQBQAE8ATABHAEIAQQA/",
+                success: "data:audio/wav;base64,UklGRlYAAABXQVZFZm10IBAAAAABAAIARKwAAIhYAQACABgAZGF0YRJCAACAgICAgPz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz8/Pz-",
+                click: "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAAERhdGEAAAAA//8/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/wD/AP8A/w==",
+                create: "data:audio/wav;base64,UklGRlgAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAAERhdGEKAAAAPAA8ADwAPAA6ADgANgA2ADYAOAA5ADwAPwA/AEAAQAAAAAA/v/+AP8A/wD5APYA8wDxAO8A7ADjAN4A1gDUAM0AywDDALsAtQCvAKwApwCjAKEAmACPAIkAhAB+AHwAdgBvAGgAZwBkAGIAYABfAF4AWwBZAFIATwBOAEoARwBDAEEAPgA9ADoAOQA2ADMANAA1ADcAOwA9AD8AQAJAAGkG",
+                success: "data:audio/wav;base64,UklGRkIAAABXQVZFZm10IBAAAAABAAIARKwAAIhYAQACABgAZGF0YTwAAAAAAAAAAAAAgIAAwMDAxMTEzMzM0NDQ2NjY4ODg6Ojs8PDw+Pj5AQEBCQkNEREVGRkdISEhKSkpMTU1OTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGS",
+                win: "data:audio/wav;base64,UklGRlQBAABXQVZFZm10IBAAAAABAAIARKwAAIhYAQACABgAZGF0YVBBAAAAAMD/wP7A/cD5wPTA6sDcwNbAw7/5v+i96LvoewB7AHsAewB7AIAAgwCEAIMAhACDAH4AewB8AHsAfAB7AHsAewB7AIAAgwCDAIEAgQCCAIEAfQB+AH4AfwB/AH4AgQCCAIIAgQCCAIEAgwCDAQIBAwEC/+L/5v/q/+7/8v/2//n/+wADATgBPgFAAVABVAFUAUwBQgE+ATQBMAEoASgBHAEUARABDAD8APgA9ADoAOA=="
+            },
+            avatars: {
+                mage: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNNTAsMTAgTDE1LDQwIEwzNSw5MCBMNjUsOTAgTDg1LDQwIFoiIGZpbGw9IiMzMzBGRkYiLz48cGF0aCBkPSJNNTAsMTUgTDc5LDQyIEw2Miw4NSBMMzgsODUgTDIxLDQyIFoiIGZpbGw9IiM2NzA2RTgiLz48Y2lyY2xlIGN4PSI1MCUgIiBjeT0iNTAlIiByPSIyMCIgZmlsbD0iI0ZGRkZGRiIvPjxjaXJjbGUgY3g9IjUwJSIgY3k9IjUwJSIgci0iMTAiIGZpbGw9IiNGRjBDMDAiLz48L3N2Zz4=",
+                trader: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNMzAsMTAgTDcwLDEwIEw5MCw1MCBMNzAsOTAgTDMwLDkwIEwxMCw1MCBaIiBmaWxsPSIjMDBGRjdGIi8+PHBhdGggZD0iTTMwLDE1IEw3MCwxNSBMODUsNTAgTDcwLDg1IEwzMCw4NSBMMTUsNTAgWiIgZmlsbD0iIzAwQjJDRiIvPjxwYXRoIGQ9Ik01MCwzMCBMMzAsNTAgTDUwLDcwIEw3MCw1MCBaIiBmaWxsPSIjRkZGRkZGIi8+PC9zdmc+",
+                voidwalker: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCUgIiBjeT0iNTAlIiByPSI0NSIgZmlsbD0iIzEwMTAxMCIvPjxwYXRoIGQ9Ik0zNSwzNSBMNjUsNjUgTSAzNSw2NSBMNjUsMzUiIHN0cm9rZT0iI0ZGM0I4MSIgc3Ryb2tlLXdpZHRoPSI4Ii8+PHBhdGggZD0iTTUwLDIwIEw4MCw1MCBMNTAsODAgTDIwLDUwIFoiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzBFNTVGRiIgc3Ryb2tlLXdpZHRoPSI1Ii8+PC9zdmc+"
+            }
+        };
+
+        // --- GAME CONFIG & STATE ---
+        const ALL_RESOURCES = [
+            { name: 'Iron', baseColor: '#c0c0c0' }, { name: 'Gold', baseColor: '#ffd700' },
+            { name: 'Water', baseColor: '#4d94ff' }, { name: 'Oxygen', baseColor: '#a6d8f0' },
+            { name: 'Silicon', baseColor: '#8a8a8a' }, { name: 'Plutonium', baseColor: '#70ff70' },
+            { name: 'Lithium', baseColor: '#ff7f7f' }, { name: 'Helium-3', baseColor: '#ffb366' },
+            { name: 'Carbon', baseColor: '#505050' }, { name: 'Titanium', baseColor: '#b0a4c4' }
+        ];
+        const BOTS = [{ id: 'bot1', name: 'Trader-Bot α' }, { id: 'bot2', name: 'Trader-Bot β' }, { id: 'bot3', name: 'Trader-Bot γ' }];
+        const NUM_RESOURCES_PER_PLAYER = 4;
+        
+        let gameState = {
+            connected: false,
+            playerAddress: '',
+            playerAvatar: '',
+            isMuted: false,
+            score: 0,
+            selectedHave: null,
+            selectedWant: null,
+            inventories: {},
+            wants: {},
+            intents: [],
+        };
+
+        // --- DOM ELEMENTS ---
+        const dom = {
+            connectBtn: document.getElementById('connect-btn'),
+            disconnectBtn: document.getElementById('disconnect-btn'),
+            playerAddress: document.getElementById('player-address'),
+            playerAvatar: document.getElementById('player-avatar'),
+            score: document.getElementById('score'),
+            highscore: document.getElementById('highscore'),
+            inventory: document.getElementById('player-inventory'),
+            wants: document.getElementById('player-wants'),
+            createIntentBtn: document.getElementById('create-intent-btn'),
+            runSolverBtn: document.getElementById('run-solver-btn'),
+            intentsList: document.getElementById('intents-list'),
+            isometricGrid: document.getElementById('isometric-grid'),
+            // Modals
+            winModal: document.getElementById('win-modal'),
+            finalScore: document.getElementById('final-score'),
+            avatarModal: document.getElementById('avatar-modal'),
+            confirmAvatarBtn: document.getElementById('confirm-avatar-btn'),
+            howToPlayModal: document.getElementById('how-to-play-modal'),
+            // Utility
+            howToPlayBtn: document.getElementById('how-to-play-btn'),
+            muteBtn: document.getElementById('mute-btn'),
+            // Audio
+            audio: {
+                bg: document.getElementById('audio-bg'),
+                click: document.getElementById('audio-click'),
+                create: document.getElementById('audio-create'),
+                success: document.getElementById('audio-success'),
+                win: document.getElementById('audio-win'),
+            }
+        };
+        
+        // Load assets
+        dom.audio.bg.src = B64_ASSETS.audio.music;
+        dom.audio.click.src = B64_ASSETS.audio.click;
+        dom.audio.create.src = B64_ASSETS.audio.create;
+        dom.audio.success.src = B64_ASSETS.audio.success;
+        dom.audio.win.src = B64_ASSETS.audio.win;
+        document.getElementById('avatar-img-mage').src = B64_ASSETS.avatars.mage;
+        document.getElementById('avatar-img-trader').src = B64_ASSETS.avatars.trader;
+        document.getElementById('avatar-img-voidwalker').src = B64_ASSETS.avatars.voidwalker;
+        
+
+        // --- SVG GENERATION ---
+        const generateResourceSVG = (resource) => {
+            const seed = resource.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const type = seed % 3;
+            if (type === 0) { // Crystal
+                return `<svg viewBox="0 0 100 100"><polygon points="50,10 90,40 70,90 30,90 10,40" fill="${resource.baseColor}" stroke="#fff" stroke-width="2"/><polygon points="50,10 50,90 10,40" fill="rgba(255,255,255,0.3)"/><polygon points="50,10 50,90 90,40" fill="rgba(0,0,0,0.2)"/></svg>`;
+            } else if (type === 1) { // Orb
+                return `<svg viewBox="0 0 100 100"><defs><radialGradient id="grad-${resource.name}"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="${resource.baseColor}"/></radialGradient></defs><circle cx="50" cy="50" r="45" fill="url(#grad-${resource.name})"/><circle cx="60" cy="35" r="10" fill="rgba(255,255,255,0.5)"/></svg>`;
+            } else { // Gas Canister
+                return `<svg viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="70" rx="5" fill="#555" /><rect x="15" y="25" width="70" height="15" fill="${resource.baseColor}" /><rect x="40" y="10" width="20" height="10" fill="#333" /></svg>`;
+            }
+        };
+
+        // --- SOUND LOGIC ---
+        function playSound(sound) {
+            if (gameState.isMuted) return;
+            const audioEl = dom.audio[sound];
+            if (audioEl) {
+                audioEl.currentTime = 0;
+                audioEl.play().catch(e => console.log("Audio play failed, user interaction needed."));
+            }
+        }
+
+        function toggleMute() {
+            gameState.isMuted = !gameState.isMuted;
+            dom.muteBtn.textContent = gameState.isMuted ? "Unmute" : "Mute";
+            dom.audio.bg.muted = gameState.isMuted;
+        }
+
+        // --- UI & RENDER LOGIC ---
+        function render() {
+            // Player Profile
+            dom.playerAddress.textContent = gameState.connected ? `${gameState.playerAddress.substring(0, 6)}...${gameState.playerAddress.substring(38)}` : "Not Connected";
+            dom.playerAvatar.src = gameState.playerAvatar ? B64_ASSETS.avatars[gameState.playerAvatar] : '';
+            dom.score.textContent = `Score: ${gameState.score}`;
+            const highscore = localStorage.getItem(gameState.playerAddress) || 0;
+            dom.highscore.textContent = `High Score: ${highscore}`;
+
+            // Player Inventory & Wants
+            dom.inventory.innerHTML = (gameState.inventories.player || []).map(r => `
+                <div class="resource-item" data-name="${r.name}">${generateResourceSVG(r)}<p>${r.name}</p></div>`).join('');
+            dom.wants.innerHTML = (gameState.wants.player || []).map(r => `
+                <div class="resource-item" data-name="${r.name}">${generateResourceSVG(r)}<p>${r.name}</p></div>`).join('');
             
-            let gameState = {
-                connected: false,
-                playerAddress: '',
-                score: 0,
-                selectedHave: null,
-                selectedWant: null,
-                inventories: {},
-                wants: {},
-                intents: [],
-            };
+            // Isometric Grid
+            renderGrid();
 
-            // --- DOM ELEMENTS ---
-            const walletBtn = document.getElementById('wallet-button');
-            const playerAddressEl = document.getElementById('player-address');
-            const avatarContainer = document.getElementById('avatar-container');
-            const scoreEl = document.getElementById('score');
-            const highscoreEl = document.getElementById('highscore');
-            const inventoryEl = document.getElementById('player-inventory');
-            const wantsEl = document.getElementById('player-wants');
-            const createIntentBtn = document.getElementById('create-intent-btn');
-            const intentsListEl = document.getElementById('intents-list');
-            const isometricGrid = document.getElementById('isometric-grid');
-            const winModal = document.getElementById('win-modal');
-            const finalScoreEl = document.getElementById('final-score');
+            // Intents List
+            dom.intentsList.innerHTML = gameState.intents.map((intent, i) => `
+                <div class="intent" id="intent-${i}">
+                    <p><strong>${BOTS.find(p=>p.id===intent.playerId)?.name || 'You'}:</strong> Gives ${intent.have.name}, Wants ${intent.want.name}</p>
+                </div>
+            `).join('');
 
-            // --- SVG GENERATION ---
-            const generateResourceSVG = (resource) => {
-                const seed = resource.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                const type = seed % 3;
-                if (type === 0) { // Crystal
-                    return `<svg viewBox="0 0 100 100"><polygon points="50,10 90,40 70,90 30,90 10,40" fill="${resource.baseColor}" stroke="#fff" stroke-width="2"/><polygon points="50,10 50,90 10,40" fill="rgba(255,255,255,0.3)"/><polygon points="50,10 50,90 90,40" fill="rgba(0,0,0,0.2)"/></svg>`;
-                } else if (type === 1) { // Orb
-                    return `<svg viewBox="0 0 100 100"><defs><radialGradient id="grad-${resource.name}"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="${resource.baseColor}"/></radialGradient></defs><circle cx="50" cy="50" r="45" fill="url(#grad-${resource.name})"/><circle cx="60" cy="35" r="10" fill="rgba(255,255,255,0.5)"/></svg>`;
-                } else { // Gas
-                    return `<svg viewBox="0 0 100 100"><path d="M 20 80 Q 50 20 80 80" stroke="${resource.baseColor}" fill="none" stroke-width="8" stroke-linecap="round"/><path d="M 30 70 Q 50 90 70 70" stroke="${resource.baseColor}" fill="none" stroke-width="6" stroke-linecap="round" opacity="0.7"/></svg>`;
-                }
-            };
+            addResourceEventListeners();
+        }
+
+        function renderGrid(flyOutIndices = [], flyInItems = []) {
+            const tiles = dom.isometricGrid.querySelectorAll('.tile');
+            if(flyOutIndices.length > 0) { // Animate out
+                flyOutIndices.forEach(index => {
+                    const container = tiles[index]?.querySelector('.item-container');
+                    if(container) container.firstChild.classList.add('fly-out');
+                });
+            }
+
+            setTimeout(() => {
+                tiles.forEach(t => t.innerHTML = ''); // Clear grid
+                 (gameState.inventories.player || []).forEach((item, index) => {
+                    if (tiles[index]) {
+                        const isNew = flyInItems.some(newItem => newItem.name === item.name && newItem.index === index);
+                        const animationClass = isNew ? 'fly-in' : '';
+                        tiles[index].innerHTML = `
+                            <div class="item-container">
+                                <div class="item-svg ${animationClass}">${generateResourceSVG(item)}</div>
+                            </div>`;
+                    }
+                });
+            }, flyOutIndices.length > 0 ? 500 : 0);
+        }
+
+        function addResourceEventListeners() {
+            dom.inventory.querySelectorAll('.resource-item').forEach(el => el.addEventListener('click', () => selectResource(el, 'have')));
+            dom.wants.querySelectorAll('.resource-item').forEach(el => el.addEventListener('click', () => selectResource(el, 'want')));
+        }
+        
+        function selectResource(el, type) {
+            playSound('click');
+            const selectedProp = `selected${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            if (gameState[selectedProp]) gameState[selectedProp].classList.remove('selected');
+            gameState[selectedProp] = el;
+            el.classList.add('selected');
+            dom.createIntentBtn.disabled = !(gameState.selectedHave && gameState.selectedWant);
+        }
+
+        // --- GAME LOGIC ---
+        function initGame() {
+            dom.runSolverBtn.disabled = false;
+            // Populate isometric grid
+            dom.isometricGrid.innerHTML = '';
+            for (let i = 0; i < 25; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                dom.isometricGrid.appendChild(tile);
+            }
+
+            // Reset state
+            gameState.score = 0;
+            gameState.intents = [];
+            const allPlayers = [{id: 'player', name: 'Player'}, ...BOTS];
+            const pool = [...ALL_RESOURCES];
             
-            const generateAvatarSVG = (address) => {
-                const seed = parseInt(address.slice(2, 10), 16);
-                const r = (seed & 0xFF0000) >> 16;
-                const g = (seed & 0x00FF00) >> 8;
-                const b = seed & 0x0000FF;
-                const primaryColor = `rgb(${r},${g},${b})`;
-                const secondaryColor = `rgb(${255-r},${255-g},${255-b})`;
-                const shapeType = seed % 4;
-                let shapes = '';
-                for(let i=0; i < 5; i++){
-                    const x = (seed >> i*3) % 100;
-                    const y = (seed >> i*4) % 100;
-                    const size = 10 + ((seed >> i*2) % 20);
-                    if(shapeType === 0) shapes += `<circle cx="${x}" cy="${y}" r="${size}" fill="${secondaryColor}" opacity="0.6"/>`;
-                    if(shapeType === 1) shapes += `<rect x="${x-size/2}" y="${y-size/2}" width="${size}" height="${size}" fill="${secondaryColor}" opacity="0.6" transform="rotate(${seed%360} ${x} ${y})"/>`;
-                    if(shapeType === 2) shapes += `<polygon points="${x},${y-size} ${x+size},${y+size} ${x-size},${y+size}" fill="${secondaryColor}" opacity="0.6"/>`;
-                    if(shapeType === 3) shapes += `<path d="M ${x-size} ${y-size} L ${x+size} ${y+size} M ${x-size} ${y+size} L ${x+size} ${y-size}" stroke="${secondaryColor}" stroke-width="3" opacity="0.6"/>`;
+            allPlayers.forEach(player => {
+                const tempPool = [...pool];
+                gameState.inventories[player.id] = [];
+                gameState.wants[player.id] = [];
+                for(let i=0; i<NUM_RESOURCES_PER_PLAYER; i++) {
+                   const haveIndex = Math.floor(Math.random() * tempPool.length);
+                   gameState.inventories[player.id].push(tempPool.splice(haveIndex, 1)[0]);
                 }
-                return `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="${primaryColor}"/>${shapes}</svg>`;
-            };
-
-            // --- GAME LOGIC ---
-            function initGame() {
-                // Populate isometric grid
-                for (let i = 0; i < 25; i++) {
-                    const tile = document.createElement('div');
-                    tile.className = 'tile';
-                    isometricGrid.appendChild(tile);
+                for(let i=0; i<NUM_RESOURCES_PER_PLAYER; i++) {
+                   const wantIndex = Math.floor(Math.random() * tempPool.length);
+                   gameState.wants[player.id].push(tempPool.splice(wantIndex, 1)[0]);
                 }
+            });
 
-                // Initialize inventories and wants for player and bots
-                const allPlayers = [{id: 'player', name: 'Player'}, ...BOTS];
-                const pool = [...ALL_RESOURCES];
-                
-                allPlayers.forEach(player => {
-                    const tempPool = [...pool];
-                    gameState.inventories[player.id] = [];
-                    gameState.wants[player.id] = [];
+            createBotIntents();
+            render();
+        }
+        
+        function createPlayerIntent() {
+            if (dom.createIntentBtn.disabled) return;
+            playSound('create');
+            const haveName = gameState.selectedHave.dataset.name;
+            const wantName = gameState.selectedWant.dataset.name;
 
-                    for(let i=0; i<NUM_RESOURCES_PER_PLAYER; i++) {
-                       const haveIndex = Math.floor(Math.random() * tempPool.length);
-                       gameState.inventories[player.id].push(tempPool.splice(haveIndex, 1)[0]);
-                    }
-                    for(let i=0; i<NUM_RESOURCES_PER_PLAYER; i++) {
-                       const wantIndex = Math.floor(Math.random() * tempPool.length);
-                       gameState.wants[player.id].push(tempPool.splice(wantIndex, 1)[0]);
-                    }
-                });
-
-                createBotIntents();
-                render();
-            }
-
-            function render() {
-                // Render Player UI
-                inventoryEl.innerHTML = gameState.inventories.player.map(r => `
-                    <div class="resource-item" data-name="${r.name}">${generateResourceSVG(r)}<p>${r.name}</p></div>`).join('');
-                wantsEl.innerHTML = gameState.wants.player.map(r => `
-                    <div class="resource-item" data-name="${r.name}">${generateResourceSVG(r)}<p>${r.name}</p></div>`).join('');
-                
-                // Render game board items
-                const tiles = isometricGrid.querySelectorAll('.tile');
-                tiles.forEach(t => t.innerHTML = '');
-                gameState.inventories.player.forEach((item, index) => {
-                    if(tiles[index]) {
-                       const itemEl = document.createElement('div');
-                       itemEl.className = 'item-svg';
-                       itemEl.innerHTML = generateResourceSVG(item);
-                       tiles[index].appendChild(itemEl);
-                    }
-                });
-
-
-                // Render Intents
-                intentsListEl.innerHTML = gameState.intents.map((intent, i) => `
-                    <div class="intent" id="intent-${i}">
-                        <p><strong>${BOTS.find(p=>p.id===intent.playerId)?.name || 'You'}:</strong> Gives ${intent.have.name}, Wants ${intent.want.name}</p>
-                    </div>
-                `).join('');
-
-                // Update score
-                scoreEl.textContent = `Score: ${gameState.score}`;
-
-                addEventListeners();
-            }
-
-            function addEventListeners() {
-                inventoryEl.querySelectorAll('.resource-item').forEach(el => {
-                    el.addEventListener('click', () => {
-                        if (gameState.selectedHave) gameState.selectedHave.classList.remove('selected');
-                        gameState.selectedHave = el;
-                        el.classList.add('selected');
-                        checkIntentButtonState();
-                    });
-                });
-                wantsEl.querySelectorAll('.resource-item').forEach(el => {
-                    el.addEventListener('click', () => {
-                        if (gameState.selectedWant) gameState.selectedWant.classList.remove('selected');
-                        gameState.selectedWant = el;
-                        el.classList.add('selected');
-                        checkIntentButtonState();
-                    });
-                });
-            }
-
-            function checkIntentButtonState() {
-                createIntentBtn.disabled = !(gameState.selectedHave && gameState.selectedWant);
-            }
-            
-            function createPlayerIntent() {
-                if(createIntentBtn.disabled) return;
-
-                const haveName = gameState.selectedHave.dataset.name;
-                const wantName = gameState.selectedWant.dataset.name;
-
+            // Prevent creating duplicate intents
+            if (!gameState.intents.some(i => i.playerId === 'player' && i.have.name === haveName && i.want.name === wantName)) {
                 gameState.intents.push({
                     playerId: 'player',
                     have: ALL_RESOURCES.find(r => r.name === haveName),
                     want: ALL_RESOURCES.find(r => r.name === wantName)
                 });
-
-                gameState.selectedHave.classList.remove('selected');
-                gameState.selectedWant.classList.remove('selected');
-                gameState.selectedHave = null;
-                gameState.selectedWant = null;
-                checkIntentButtonState();
-                render();
             }
 
-            function createBotIntents() {
-                 BOTS.forEach(bot => {
-                    if (gameState.intents.some(intent => intent.playerId === bot.id)) return;
-                    const haveRes = gameState.inventories[bot.id][Math.floor(Math.random() * gameState.inventories[bot.id].length)];
-                    const wantRes = gameState.wants[bot.id][Math.floor(Math.random() * gameState.wants[bot.id].length)];
+            gameState.selectedHave.classList.remove('selected');
+            gameState.selectedWant.classList.remove('selected');
+            gameState.selectedHave = null;
+            gameState.selectedWant = null;
+            dom.createIntentBtn.disabled = true;
+            render();
+        }
+
+        function createBotIntents() {
+             BOTS.forEach(bot => {
+                if (gameState.intents.some(intent => intent.playerId === bot.id)) return; // One intent per bot at a time
+                const haveRes = gameState.inventories[bot.id][Math.floor(Math.random() * gameState.inventories[bot.id].length)];
+                const wantRes = gameState.wants[bot.id][Math.floor(Math.random() * gameState.wants[bot.id].length)];
+                if(haveRes && wantRes) {
                     gameState.intents.push({ playerId: bot.id, have: haveRes, want: wantRes });
-                });
-            }
+                }
+            });
+        }
+        
+        function solver() {
+            dom.runSolverBtn.disabled = true;
+            let tradeFound = false;
+            let playerInvolved = false;
+            let playerInventoryBefore = [...(gameState.inventories.player || [])];
 
-            // --- SOLVER LOGIC ---
-            function solver() {
-                let tradeFound = false;
-                const intents = gameState.intents;
-
-                // Attempt to find a 3-way trade first (more points!)
-                for (let i = 0; i < intents.length; i++) {
-                    for (let j = 0; j < intents.length; j++) {
-                        for (let k = 0; k < intents.length; k++) {
-                            if (i === j || i === k || j === k) continue;
-
-                            const a = intents[i];
-                            const b = intents[j];
-                            const c = intents[k];
-
-                            if (a.have.name === b.want.name && b.have.name === c.want.name && c.have.name === a.want.name) {
-                                executeTrade([i,j,k]);
-                                if(a.playerId === 'player' || b.playerId === 'player' || c.playerId === 'player') gameState.score += 50;
-                                tradeFound = true;
-                                break;
-                            }
+            const intents = gameState.intents;
+            // Find 3-way trade
+            for (let i = 0; i < intents.length && !tradeFound; i++) {
+                for (let j = 0; j < intents.length && !tradeFound; j++) {
+                    for (let k = 0; k < intents.length && !tradeFound; k++) {
+                        if (i === j || i === k || j === k) continue;
+                        const a = intents[i], b = intents[j], c = intents[k];
+                        if (a.have.name === b.want.name && b.have.name === c.want.name && c.have.name === a.want.name) {
+                            if (a.playerId === 'player' || b.playerId === 'player' || c.playerId === 'player') playerInvolved = true;
+                            executeTrade([i,j,k], playerInventoryBefore);
+                            tradeFound = true;
                         }
-                        if (tradeFound) break;
                     }
-                    if (tradeFound) break;
                 }
-                
-                // If no 3-way, look for 2-way trade
-                if(!tradeFound) {
-                    for (let i = 0; i < intents.length; i++) {
-                        for (let j = i + 1; j < intents.length; j++) {
-                            const a = intents[i];
-                            const b = intents[j];
-                            if (a.have.name === b.want.name && a.want.name === b.have.name) {
-                                executeTrade([i,j]);
-                                if(a.playerId === 'player' || b.playerId === 'player') gameState.score += 10;
-                                tradeFound = true;
-                                break;
-                            }
+            }
+            // Find 2-way trade
+            if(!tradeFound) {
+                for (let i = 0; i < intents.length && !tradeFound; i++) {
+                    for (let j = i + 1; j < intents.length && !tradeFound; j++) {
+                        const a = intents[i], b = intents[j];
+                        if (a.have.name === b.want.name && a.want.name === b.have.name) {
+                            if (a.playerId === 'player' || b.playerId === 'player') playerInvolved = true;
+                            executeTrade([i,j], playerInventoryBefore);
+                            tradeFound = true;
                         }
-                        if(tradeFound) break;
                     }
-                }
-
-                if (tradeFound) {
-                    render();
-                    createBotIntents();
-                    checkWinCondition();
                 }
             }
 
-            function executeTrade(intentIndices) {
-                const involvedIntents = intentIndices.map(i => gameState.intents[i]);
-                const tradeMap = {}; // { takerId: { gives: resource, takes: resource } }
-                
-                involvedIntents.forEach((intent, i) => {
-                    const nextIntent = involvedIntents[(i + 1) % involvedIntents.length];
-                     // A 2-way trade has different logic
-                    if(involvedIntents.length === 2) {
-                        if(i === 0) { // A gives to B, B gives to A
-                            tradeMap[intent.playerId] = { gives: intent.have, takes: nextIntent.have };
-                        } else {
-                             tradeMap[intent.playerId] = { gives: intent.have, takes: involvedIntents[0].have };
-                        }
-                    } else { // 3-way trade A -> B -> C -> A
-                         tradeMap[intent.playerId] = { gives: intent.have, takes: nextIntent.have };
-                    }
-                });
-
-                // Update inventories
-                for (const playerId in tradeMap) {
-                    const trade = tradeMap[playerId];
-                    gameState.inventories[playerId] = gameState.inventories[playerId].filter(r => r.name !== trade.gives.name);
-                    gameState.inventories[playerId].push(trade.takes);
+            if (tradeFound) {
+                if(playerInvolved) {
+                   playSound('success');
+                   gameState.score += (intents.length === 3 ? 50 : 10);
+                   checkWinCondition();
                 }
-                
-                // Animate and remove intents
-                intentIndices.forEach(i => document.getElementById(`intent-${i}`)?.classList.add('flash'));
-                setTimeout(() => {
-                    gameState.intents = gameState.intents.filter((_, index) => !intentIndices.includes(index));
-                    render();
-                }, 1000);
+            } else {
+                alert("Solver could not find any valid trades with the current intents.");
             }
-
-            function checkWinCondition() {
-                const playerWantsSet = new Set(gameState.wants.player.map(r => r.name));
-                const playerHasSet = new Set(gameState.inventories.player.map(r => r.name));
-                
-                const hasAllWants = [...playerWantsSet].every(want => playerHasSet.has(want));
-                
-                if (hasAllWants) {
-                    finalScoreEl.textContent = `Your Final Score: ${gameState.score}`;
-                    const highscore = parseInt(localStorage.getItem(gameState.playerAddress) || '0');
-                    if(gameState.score > highscore) {
-                        localStorage.setItem(gameState.playerAddress, gameState.score);
-                    }
-                    winModal.style.display = 'flex';
-                }
-            }
-
-            // --- WALLET & INIT ---
-            async function connectWallet() {
-                if (window.ethereum) {
-                    try {
-                        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                        gameState.playerAddress = accounts[0];
-                        gameState.connected = true;
-                        
-                        walletBtn.textContent = 'Connected';
-                        walletBtn.disabled = true;
-                        playerAddressEl.textContent = `${gameState.playerAddress.substring(0, 6)}...${gameState.playerAddress.substring(38)}`;
-                        avatarContainer.innerHTML = generateAvatarSVG(gameState.playerAddress);
-
-                        const highscore = localStorage.getItem(gameState.playerAddress) || '0';
-                        highscoreEl.textContent = `High Score: ${highscore}`;
-
-                        initGame();
-                    } catch (error) {
-                        console.error("User rejected wallet connection", error);
-                        alert("Wallet connection is required to play.");
-                    }
-                } else {
-                    alert('MetaMask is not installed! Please install it to play.');
-                }
-            }
-
-            walletBtn.addEventListener('click', connectWallet);
-            createIntentBtn.addEventListener('click', createPlayerIntent);
+            setTimeout(() => dom.runSolverBtn.disabled = false, 1000); // Prevent spamming
+        }
+        
+        function executeTrade(intentIndices, playerInventoryBefore) {
+            const involvedIntents = intentIndices.map(i => gameState.intents[i]).sort((a,b)=>a.playerId.localeCompare(b.playerId));
+            const tradeMap = {};
+            const playerGaveItem = {};
             
-            // Solver runs periodically
-            setInterval(solver, 3000);
-        });
+            // Determine what each player gives and receives
+            involvedIntents.forEach((intent, i) => {
+                let receiverIntent;
+                if(involvedIntents.length === 2) { // 2-way
+                   receiverIntent = involvedIntents[i === 0 ? 1 : 0];
+                } else { // 3-way
+                   receiverIntent = involvedIntents.find(p => p.want.name === intent.have.name);
+                }
+                tradeMap[intent.playerId] = { gives: intent.have, takes: receiverIntent.have };
+            });
+
+            // Animate items flying out
+            const flyOutIndices = [];
+            if(tradeMap.player) {
+                const index = playerInventoryBefore.findIndex(item => item.name === tradeMap.player.gives.name);
+                if (index !== -1) flyOutIndices.push(index);
+            }
+            
+            // Update inventories
+            for (const playerId in tradeMap) {
+                const trade = tradeMap[playerId];
+                gameState.inventories[playerId] = gameState.inventories[playerId].filter(r => r.name !== trade.gives.name);
+                gameState.inventories[playerId].push(trade.takes);
+            }
+            
+            // Animate items flying in
+            const flyInItems = [];
+             if(tradeMap.player) {
+                const newIndex = gameState.inventories.player.findIndex(item => item.name === tradeMap.player.takes.name);
+                if(newIndex !== -1) flyInItems.push({name: tradeMap.player.takes.name, index: newIndex});
+            }
+
+            renderGrid(flyOutIndices, flyInItems);
+
+            // Animate and remove intents from UI
+            intentIndices.forEach(i => document.getElementById(`intent-${i}`)?.classList.add('flash'));
+            setTimeout(() => {
+                gameState.intents = gameState.intents.filter((_, index) => !intentIndices.includes(index));
+                render();
+                createBotIntents(); // Bots create new intents after a trade
+            }, 1000);
+        }
+
+        function checkWinCondition() {
+            const playerWantsSet = new Set((gameState.wants.player || []).map(r => r.name));
+            if (playerWantsSet.size === 0) return;
+            const playerHasSet = new Set((gameState.inventories.player || []).map(r => r.name));
+            const hasAllWants = [...playerWantsSet].every(want => playerHasSet.has(want));
+            
+            if (hasAllWants) {
+                playSound('win');
+                dom.finalScore.textContent = `Your Final Score: ${gameState.score}`;
+                const highscore = parseInt(localStorage.getItem(gameState.playerAddress) || '0');
+                if (gameState.score > highscore) {
+                    localStorage.setItem(gameState.playerAddress, gameState.score);
+                }
+                setTimeout(() => dom.winModal.style.display = 'flex', 1000);
+            }
+        }
+
+        // --- WALLET & SESSION ---
+        async function connectWallet() {
+            playSound('click');
+            if (window.ethereum) {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    gameState.playerAddress = accounts[0];
+                    gameState.connected = true;
+                    
+                    dom.connectBtn.style.display = 'none';
+                    dom.disconnectBtn.style.display = 'block';
+
+                    const savedAvatar = localStorage.getItem(gameState.playerAddress + '_avatar');
+                    if (savedAvatar) {
+                        gameState.playerAvatar = savedAvatar;
+                        initGame();
+                    } else {
+                        dom.avatarModal.style.display = 'flex';
+                    }
+                } catch (error) {
+                    alert("Wallet connection was rejected.");
+                }
+            } else {
+                alert('MetaMask is not installed! Please install it to play.');
+            }
+        }
+
+        function disconnectWallet() {
+            playSound('click');
+            gameState = { ...gameState, connected: false, playerAddress: '', playerAvatar: '', score: 0, inventories:{}, wants:{} };
+            dom.connectBtn.style.display = 'block';
+            dom.disconnectBtn.style.display = 'none';
+            dom.runSolverBtn.disabled = true;
+            render(); // Clear the UI
+            dom.isometricGrid.innerHTML = ''; // explicitly clear grid
+        }
+        
+        function handleAvatarSelection(e) {
+            playSound('click');
+            document.querySelectorAll('.avatar-choice').forEach(el => el.classList.remove('selected'));
+            const choice = e.currentTarget;
+            choice.classList.add('selected');
+            gameState.playerAvatar = choice.dataset.avatar;
+            dom.confirmAvatarBtn.disabled = false;
+        }
+
+        function confirmAvatar() {
+            playSound('create');
+            localStorage.setItem(gameState.playerAddress + '_avatar', gameState.playerAvatar);
+            dom.avatarModal.style.display = 'none';
+            initGame();
+        }
+
+        // --- INITIALIZATION ---
+        function main() {
+            // Event Listeners
+            dom.connectBtn.addEventListener('click', connectWallet);
+            dom.disconnectBtn.addEventListener('click', disconnectWallet);
+            dom.createIntentBtn.addEventListener('click', createPlayerIntent);
+            dom.runSolverBtn.addEventListener('click', solver);
+            dom.muteBtn.addEventListener('click', toggleMute);
+            document.querySelectorAll('.avatar-choice').forEach(el => el.addEventListener('click', handleAvatarSelection));
+            dom.confirmAvatarBtn.addEventListener('click', confirmAvatar);
+            dom.howToPlayBtn.addEventListener('click', () => { dom.howToPlayModal.style.display = 'flex'; playSound('click'); });
+            document.getElementById('close-how-to-play-btn').addEventListener('click', () => { dom.howToPlayModal.style.display = 'none'; playSound('click'); });
+            
+            // Check for first visit to show "How to Play"
+            if (!localStorage.getItem('anomaverse_visited')) {
+                dom.howToPlayModal.style.display = 'flex';
+                localStorage.setItem('anomaverse_visited', 'true');
+            }
+
+            // Auto-play music on first user interaction
+            document.body.addEventListener('click', () => {
+                if (dom.audio.bg.paused) {
+                    playSound('bg');
+                }
+            }, { once: true });
+
+            render(); // Initial render for disconnected state
+        }
+
+        main();
+    });
     </script>
 </body>
 </html>
