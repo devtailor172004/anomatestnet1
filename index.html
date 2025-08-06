@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anomaverse - The Intent-Driven Economy</title>
+    <style>
+        :root {
+            --background-color: #0d0d0f;
+            --text-color: #e0e0e0;
+            --primary-color: #ff3b81;
+            --secondary-color: #00e5ff;
+            --container-bg: rgba(26, 26, 30, 0.8);
+            --border-color: #333;
+            --font-family: 'Consolas', 'Courier New', monospace;
+            --tile-size: 80px;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            background-image: radial-gradient(circle, #1a1a1f 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .game-wrapper {
+            display: grid;
+            grid-template-columns: 250px 1fr 250px;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+            height: 95vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .panel {
+            background-color: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .panel h2, .panel h3 {
+            color: var(--primary-color);
+            text-shadow: 0 0 4px var(--primary-color);
+            margin-top: 0;
+            text-align: center;
+        }
+
+        /* Left Panel */
+        #player-panel {
+            justify-content: space-between;
+        }
+        #avatar-container {
+            width: 100px;
+            height: 100px;
+            margin: 10px auto;
+            border: 2px solid var(--secondary-color);
+            border-radius: 50%;
+            padding: 5px;
+        }
+        #player-address {
+            font-size: 12px;
+            text-align: center;
+            word-break: break-all;
+            color: var(--secondary-color);
+        }
+        #score, #highscore {
+            text-align: center;
+            font-size: 18px;
+            margin: 5px 0;
+        }
+        button {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: var(--font-family);
+            font-size: 16px;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            box-shadow: 0 0 15px var(--primary-color);
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Center Panel - Game Board */
+        #game-board {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        #isometric-grid {
+            display: grid;
+            grid-template-columns: repeat(5, var(--tile-size));
+            transform: rotateX(60deg) rotateZ(45deg);
+            transform-style: preserve-3d;
+        }
+
+        .tile {
+            width: var(--tile-size);
+            height: var(--tile-size);
+            background-color: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .tile:hover {
+            background-color: rgba(255, 59, 129, 0.3);
+            border-color: var(--primary-color);
+        }
+        .tile .item-svg {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            top: 10%;
+            left: 10%;
+            transform: rotateZ(-45deg) rotateX(-60deg);
+        }
+        
+
+        /* Right Panel */
+        .resource-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .resource-item {
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            padding: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .resource-item.selected {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+        .resource-item svg {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto;
+        }
+        .resource-item p {
+            margin: 5px 0 0;
+            font-size: 12px;
+        }
+        
+        #intents-list .intent {
+            border: 1px dashed var(--secondary-color);
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.5s;
+        }
+
+        .intent.flash {
+            animation: flash 1s ease;
+        }
+
+        @keyframes flash {
+            0% { background-color: var(--container-bg); }
+            50% { background-color: var(--primary-color); }
+            100% { background-color: var(--container-bg); }
+        }
+
+        #log-list li {
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: var(--background-color);
+            padding: 30px;
+            border: 2px solid var(--primary-color);
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 0 20px var(--primary-color);
+        }
+        .modal-content h2 {
+            font-size: 2em;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        <div class="panel" id="player-panel">
+            <div>
+                <h2>Player Profile</h2>
+                <div id="avatar-container"></div>
+                <p id="player-address">Not Connected</p>
+                <p id="score">Score: 0</p>
+                <p id="highscore">High Score: 0</p>
+            </div>
+            <div>
+                 <button id="wallet-button">Connect Wallet</button>
+            </div>
+        </div>
+
+        <div class="panel" id="game-world-panel">
+            <div id="game-board">
+                <div id="isometric-grid"></div>
+            </div>
+        </div>
+
+        <div class="panel" id="intents-panel">
+            <div id="inventory-section" style="flex: 2;">
+                <h3>You Have:</h3>
+                <div class="resource-grid" id="player-inventory"></div>
+                <h3>You Want:</h3>
+                <div class="resource-grid" id="player-wants"></div>
+                <button id="create-intent-btn" disabled>Create Intent</button>
+            </div>
+            <div id="solver-section" style="flex: 3;">
+                 <h3>Active Intents</h3>
+                 <div id="intents-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="win-modal" class="modal">
+        <div class="modal-content">
+            <h2>Intent Satisfied!</h2>
+            <p>Congratulations, you have acquired all your desired resources through the power of decentralized bartering!</p>
+            <p id="final-score"></p>
+            <button onclick="location.reload()">Trade Again</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIG & STATE ---
+            const ALL_RESOURCES = [
+                { name: 'Iron', baseColor: '#c0c0c0' }, { name: 'Gold', baseColor: '#ffd700' },
+                { name: 'Water', baseColor: '#4d94ff' }, { name: 'Oxygen', baseColor: '#a6d8f0' },
+                { name: 'Silicon', baseColor: '#8a8a8a' }, { name: 'Plutonium', baseColor: '#70ff70' },
+                { name: 'Lithium', baseColor: '#ff7f7f' }, { name: 'Helium-3', baseColor: '#ffb366' },
+                { name: 'Carbon', baseColor: '#505050' }, { name: 'Titanium', baseColor: '#b0a4c4' }
+            ];
+            const BOTS = [{ id: 'bot1', name: 'Trader-Bot α' }, { id: 'bot2', name: 'Trader-Bot β' }, { id: 'bot3', name: 'Trader-Bot γ' }];
+            const NUM_RESOURCES_PER_PLAYER = 4;
+            
+            let gameState = {
+                connected: false,
+                playerAddress: '',
+                score: 0,
+                selectedHave: null,
+                selectedWant: null,
+                inventories: {},
+                wants: {},
+                intents: [],
+            };
+
+            // --- DOM ELEMENTS ---
+            const walletBtn = document.getElementById('wallet-button');
+            const playerAddressEl = document.getElementById('player-address');
+            const avatarContainer = document.getElementById('avatar-container');
+            const scoreEl = document.getElementById('score');
+            const highscoreEl = document.getElementById('highscore');
+            const inventoryEl = document.getElementById('player-inventory');
+            const wantsEl = document.getElementById('player-wants');
+            const createIntentBtn = document.getElementById('create-intent-btn');
+            const intentsListEl = document.getElementById('intents-list');
+            const isometricGrid = document.getElementById('isometric-grid');
+            const winModal = document.getElementById('win-modal');
+            const finalScoreEl = document.getElementById('final-score');
+
+            // --- SVG GENERATION ---
+            const generateResourceSVG = (resource) => {
+                const seed = resource.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const type = seed % 3;
+                if (type === 0) { // Crystal
+                    return `<svg viewBox="0 0 100 100"><polygon points="50,10 90,40 70,90 30,90 10,40" fill="${resource.baseColor}" stroke="#fff" stroke-width="2"/><polygon points="50,10 50,90 10,40" fill="rgba(255,255,255,0.3)"/><polygon points="50,10 50,90 90,40" fill="rgba(0,0,0,0.2)"/></svg>`;
+                } else if (type === 1) { // Orb
+                    return `<svg viewBox="0 0 100 100"><defs><radialGradient id="grad-${resource.name}"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="${resource.baseColor}"/></radialGradient></defs><circle cx="50" cy="50" r="45" fill="url(#grad-${resource.name})"/><circle cx="60" cy="35" r="10" fill="rgba(255,255,255,0.5)"/></svg>`;
+                } else { // Gas
+                    return `<svg viewBox="0 0 100 100"><path d="M 20 80 Q 50 20 80 80" stroke="${resource.baseColor}" fill="none" stroke-width="8" stroke-linecap="round"/><path d="M 30 70 Q 50 90 70 70" stroke="${resource.baseColor}" fill="none" stroke-width="6" stroke-linecap="round" opacity="0.7"/></svg>`;
+                }
+            };
+            
+            const generateAvatarSVG = (address) => {
+                const seed = parseInt(address.slice(2, 10), 16);
+                const r = (seed & 0xFF0000) >> 16;
+                const g = (seed & 0x00FF00) >> 8;
+                const b = seed & 0x0000FF;
+                const primaryColor = `rgb(${r},${g},${b})`;
+                const secondaryColor = `rgb(${255-r},${255-g},${255-b})`;
+                const shapeType = seed % 4;
+                let shapes = '';
+                for(let i=0; i < 5; i++){
+                    const x = (seed >> i*3) % 100;
+                    const y = (seed >> i*4) % 100;
+                    const size = 10 + ((seed >> i*2) % 20);
+                    if(shapeType === 0) shapes += `<circle cx="${x}" cy="${y}" r="${size}" fill="${secondaryColor}" opacity="0.6"/>`;
+                    if(shapeType === 1) shapes += `<rect x="${x-size/2}" y="${y-size/2}" width="${size}" height="${size}" fill="${secondaryColor}" opacity="0.6" transform="rotate(${seed%360} ${x} ${y})"/>`;
+                    if(shapeType === 2) shapes += `<polygon points="${x},${y-size} ${x+size},${y+size} ${x-size},${y+size}" fill="${secondaryColor}" opacity="0.6"/>`;
+                    if(shapeType === 3) shapes += `<path d="M ${x-size} ${y-size} L ${x+size} ${y+size} M ${x-size} ${y+size} L ${x+size} ${y-size}" stroke="${secondaryColor}" stroke-width="3" opacity="0.6"/>`;
+                }
+                return `<svg viewBox="0 0 100 100"><rect width="100" height="100" fill="${primaryColor}"/>${shapes}</svg>`;
+            };
+
+            // --- GAME LOGIC ---
+            function initGame() {
+                // Populate isometric grid
+                for (let i = 0; i < 25; i++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    isometricGrid.appendChild(tile);
+                }
+
+                // Initialize inventories and wants for player and bots
+                const allPlayers = [{id: 'player', name: 'Player'}, ...BOTS];
+                const pool = [...ALL_RESOURCES];
+                
+                allPlayers.forEach(player => {
+                    const tempPool = [...pool];
+                    gameState.inventories[player.id] = [];
+                    gameState.wants[player.id] = [];
+
+                    for(let i=0; i<NUM_RESOURCES_PER_PLAYER; i++) {
+                       const haveIndex = Math.floor(Math.random() * tempPool.length);
+                       gameState.inventories[player.id].push(tempPool.splice(haveIndex, 1)[0]);
+                    }
+                    for(let i=0; i<NUM_RESOURCES_PER_PLAYER; i++) {
+                       const wantIndex = Math.floor(Math.random() * tempPool.length);
+                       gameState.wants[player.id].push(tempPool.splice(wantIndex, 1)[0]);
+                    }
+                });
+
+                createBotIntents();
+                render();
+            }
+
+            function render() {
+                // Render Player UI
+                inventoryEl.innerHTML = gameState.inventories.player.map(r => `
+                    <div class="resource-item" data-name="${r.name}">${generateResourceSVG(r)}<p>${r.name}</p></div>`).join('');
+                wantsEl.innerHTML = gameState.wants.player.map(r => `
+                    <div class="resource-item" data-name="${r.name}">${generateResourceSVG(r)}<p>${r.name}</p></div>`).join('');
+                
+                // Render game board items
+                const tiles = isometricGrid.querySelectorAll('.tile');
+                tiles.forEach(t => t.innerHTML = '');
+                gameState.inventories.player.forEach((item, index) => {
+                    if(tiles[index]) {
+                       const itemEl = document.createElement('div');
+                       itemEl.className = 'item-svg';
+                       itemEl.innerHTML = generateResourceSVG(item);
+                       tiles[index].appendChild(itemEl);
+                    }
+                });
+
+
+                // Render Intents
+                intentsListEl.innerHTML = gameState.intents.map((intent, i) => `
+                    <div class="intent" id="intent-${i}">
+                        <p><strong>${BOTS.find(p=>p.id===intent.playerId)?.name || 'You'}:</strong> Gives ${intent.have.name}, Wants ${intent.want.name}</p>
+                    </div>
+                `).join('');
+
+                // Update score
+                scoreEl.textContent = `Score: ${gameState.score}`;
+
+                addEventListeners();
+            }
+
+            function addEventListeners() {
+                inventoryEl.querySelectorAll('.resource-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        if (gameState.selectedHave) gameState.selectedHave.classList.remove('selected');
+                        gameState.selectedHave = el;
+                        el.classList.add('selected');
+                        checkIntentButtonState();
+                    });
+                });
+                wantsEl.querySelectorAll('.resource-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        if (gameState.selectedWant) gameState.selectedWant.classList.remove('selected');
+                        gameState.selectedWant = el;
+                        el.classList.add('selected');
+                        checkIntentButtonState();
+                    });
+                });
+            }
+
+            function checkIntentButtonState() {
+                createIntentBtn.disabled = !(gameState.selectedHave && gameState.selectedWant);
+            }
+            
+            function createPlayerIntent() {
+                if(createIntentBtn.disabled) return;
+
+                const haveName = gameState.selectedHave.dataset.name;
+                const wantName = gameState.selectedWant.dataset.name;
+
+                gameState.intents.push({
+                    playerId: 'player',
+                    have: ALL_RESOURCES.find(r => r.name === haveName),
+                    want: ALL_RESOURCES.find(r => r.name === wantName)
+                });
+
+                gameState.selectedHave.classList.remove('selected');
+                gameState.selectedWant.classList.remove('selected');
+                gameState.selectedHave = null;
+                gameState.selectedWant = null;
+                checkIntentButtonState();
+                render();
+            }
+
+            function createBotIntents() {
+                 BOTS.forEach(bot => {
+                    if (gameState.intents.some(intent => intent.playerId === bot.id)) return;
+                    const haveRes = gameState.inventories[bot.id][Math.floor(Math.random() * gameState.inventories[bot.id].length)];
+                    const wantRes = gameState.wants[bot.id][Math.floor(Math.random() * gameState.wants[bot.id].length)];
+                    gameState.intents.push({ playerId: bot.id, have: haveRes, want: wantRes });
+                });
+            }
+
+            // --- SOLVER LOGIC ---
+            function solver() {
+                let tradeFound = false;
+                const intents = gameState.intents;
+
+                // Attempt to find a 3-way trade first (more points!)
+                for (let i = 0; i < intents.length; i++) {
+                    for (let j = 0; j < intents.length; j++) {
+                        for (let k = 0; k < intents.length; k++) {
+                            if (i === j || i === k || j === k) continue;
+
+                            const a = intents[i];
+                            const b = intents[j];
+                            const c = intents[k];
+
+                            if (a.have.name === b.want.name && b.have.name === c.want.name && c.have.name === a.want.name) {
+                                executeTrade([i,j,k]);
+                                if(a.playerId === 'player' || b.playerId === 'player' || c.playerId === 'player') gameState.score += 50;
+                                tradeFound = true;
+                                break;
+                            }
+                        }
+                        if (tradeFound) break;
+                    }
+                    if (tradeFound) break;
+                }
+                
+                // If no 3-way, look for 2-way trade
+                if(!tradeFound) {
+                    for (let i = 0; i < intents.length; i++) {
+                        for (let j = i + 1; j < intents.length; j++) {
+                            const a = intents[i];
+                            const b = intents[j];
+                            if (a.have.name === b.want.name && a.want.name === b.have.name) {
+                                executeTrade([i,j]);
+                                if(a.playerId === 'player' || b.playerId === 'player') gameState.score += 10;
+                                tradeFound = true;
+                                break;
+                            }
+                        }
+                        if(tradeFound) break;
+                    }
+                }
+
+                if (tradeFound) {
+                    render();
+                    createBotIntents();
+                    checkWinCondition();
+                }
+            }
+
+            function executeTrade(intentIndices) {
+                const involvedIntents = intentIndices.map(i => gameState.intents[i]);
+                const tradeMap = {}; // { takerId: { gives: resource, takes: resource } }
+                
+                involvedIntents.forEach((intent, i) => {
+                    const nextIntent = involvedIntents[(i + 1) % involvedIntents.length];
+                     // A 2-way trade has different logic
+                    if(involvedIntents.length === 2) {
+                        if(i === 0) { // A gives to B, B gives to A
+                            tradeMap[intent.playerId] = { gives: intent.have, takes: nextIntent.have };
+                        } else {
+                             tradeMap[intent.playerId] = { gives: intent.have, takes: involvedIntents[0].have };
+                        }
+                    } else { // 3-way trade A -> B -> C -> A
+                         tradeMap[intent.playerId] = { gives: intent.have, takes: nextIntent.have };
+                    }
+                });
+
+                // Update inventories
+                for (const playerId in tradeMap) {
+                    const trade = tradeMap[playerId];
+                    gameState.inventories[playerId] = gameState.inventories[playerId].filter(r => r.name !== trade.gives.name);
+                    gameState.inventories[playerId].push(trade.takes);
+                }
+                
+                // Animate and remove intents
+                intentIndices.forEach(i => document.getElementById(`intent-${i}`)?.classList.add('flash'));
+                setTimeout(() => {
+                    gameState.intents = gameState.intents.filter((_, index) => !intentIndices.includes(index));
+                    render();
+                }, 1000);
+            }
+
+            function checkWinCondition() {
+                const playerWantsSet = new Set(gameState.wants.player.map(r => r.name));
+                const playerHasSet = new Set(gameState.inventories.player.map(r => r.name));
+                
+                const hasAllWants = [...playerWantsSet].every(want => playerHasSet.has(want));
+                
+                if (hasAllWants) {
+                    finalScoreEl.textContent = `Your Final Score: ${gameState.score}`;
+                    const highscore = parseInt(localStorage.getItem(gameState.playerAddress) || '0');
+                    if(gameState.score > highscore) {
+                        localStorage.setItem(gameState.playerAddress, gameState.score);
+                    }
+                    winModal.style.display = 'flex';
+                }
+            }
+
+            // --- WALLET & INIT ---
+            async function connectWallet() {
+                if (window.ethereum) {
+                    try {
+                        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                        gameState.playerAddress = accounts[0];
+                        gameState.connected = true;
+                        
+                        walletBtn.textContent = 'Connected';
+                        walletBtn.disabled = true;
+                        playerAddressEl.textContent = `${gameState.playerAddress.substring(0, 6)}...${gameState.playerAddress.substring(38)}`;
+                        avatarContainer.innerHTML = generateAvatarSVG(gameState.playerAddress);
+
+                        const highscore = localStorage.getItem(gameState.playerAddress) || '0';
+                        highscoreEl.textContent = `High Score: ${highscore}`;
+
+                        initGame();
+                    } catch (error) {
+                        console.error("User rejected wallet connection", error);
+                        alert("Wallet connection is required to play.");
+                    }
+                } else {
+                    alert('MetaMask is not installed! Please install it to play.');
+                }
+            }
+
+            walletBtn.addEventListener('click', connectWallet);
+            createIntentBtn.addEventListener('click', createPlayerIntent);
+            
+            // Solver runs periodically
+            setInterval(solver, 3000);
+        });
+    </script>
+</body>
+</html>
